@@ -116,16 +116,16 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 
 # # check data loader shape
 
-# # training
-# print("#### TRAINING ####")
-# print("minibatches trainig: ", len(list(trainLoader)))
-# print("minibatch trainig size: ", list(trainLoader)[0][0].shape)
+# training
+print("#### TRAINING ####")
+print("minibatches trainig: ", len(list(trainLoader)))
+print("minibatch trainig size: ", list(trainLoader)[0][0].shape)
 
 
-# # testing
-# print("\n#### TESTING ####")
-# print("minibatches test: ", len(list(testLoader)))
-# print("minibatch trainig size: ", list(testLoader)[0][0].shape)
+# testing
+print("\n#### TESTING ####")
+print("minibatches test: ", len(list(testLoader)))
+print("minibatch trainig size: ", list(testLoader)[0][0].shape)
 
 
 # ## Define autoencoder structure
