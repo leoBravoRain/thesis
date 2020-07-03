@@ -127,7 +127,6 @@ print("\n#### TESTING ####")
 print("minibatches test: ", len(list(testLoader)))
 print("minibatch trainig size: ", list(testLoader)[0][0].shape)
 
-
 # ## Define autoencoder structure
 # To start with the work, It is going to build a very basic Autoencoder
 
