@@ -518,7 +518,7 @@ if use_gpu:
     model = model.cuda()
 
 # number of epochs
-epochs = 2
+epochs = 100000
 
 # loss
 train_loss = np.zeros((epochs,))
