@@ -5,7 +5,7 @@
 
 
 # training on guanaco
-trainingOnGuanaco = False
+trainingOnGuanaco = True
 
 
 # # Import libraries
