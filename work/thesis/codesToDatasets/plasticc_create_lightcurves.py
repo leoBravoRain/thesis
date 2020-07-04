@@ -16,13 +16,10 @@ def make_lc_tensor(df_np, max_lc_length):
     return torch.from_numpy(lc_numpy.astype('float32'))
 
 
-def find_longest_lightcurve(path):
-    p = Path(path)
-    data_paths = sorted(p.glob('plasticc_*_lightcurves*.csv'))
-    
+def find_longest_lightcurve(data_paths):
     max_length_single_band = 0
     for data_path in data_paths:
-        df_data = pd.read_csv(data_path).set_index("object_id")
+        df_data = pd.read_csv(data_path).set_index("object_id") # This is crazily memoery expensive, it can be done line by line
         max_length_single_band_test = df_data.groupby(["object_id", "passband"]).count().max().max()
         if max_length_single_band_test > max_length_single_band:
             max_length_single_band = max_length_single_band_test
@@ -30,12 +27,16 @@ def find_longest_lightcurve(path):
 
 
 def populate_light_curve_folder(path, overwrite_light_curves=False):
-    #max_length_single_band = max_longest_find_longest_lightcurve(path)
     print(f"Looking for plasticc data at {path}")
     p = Path(path)    
-    data_paths = sorted(p.glob('plasticc_*_lightcurves*.csv'))
+    data_paths = sorted(p.glob('plasticc_test_set_batch*.csv'))
+    data_paths = list(p.glob('plasticc_train_lightcurves.csv')) + data_paths
     print(f"Found {len(data_paths)} csv files at given path")
     
+    #max_length_single_band = find_longest_lightcurve(data_paths)
+    #print(f'Longest light curve found : {max_length_single_band}')
+    max_length_single_band = 72
+        
     if len(data_paths) > 0:
         # Create light_curves folder if it does not exist
         (p / 'light_curves').mkdir(parents=True, exist_ok=True)
@@ -53,12 +54,12 @@ def populate_light_curve_folder(path, overwrite_light_curves=False):
             tensor_file = p / 'light_curves' / f'{lc_id}.pt'
             if overwrite_light_curves or not tensor_file.exists():
                 with open(tensor_file, 'wb') as f:
-                    torch.save(make_lc_tensor(df_data.loc[lc_id].values, 72), f, 
+                    torch.save(make_lc_tensor(df_data.loc[lc_id].values, max_length_single_band), f, 
                                _use_new_zipfile_serialization=True, pickle_protocol=4)
         
 
 if __name__ == "__main__":
-    assert len(sys.argv) == 2, "Please give the path to the plasticc CSVs"
+    assert len(sys.argv) == 2, "Please give the path to the uncompressed plasticc CSVs"
     path = sys.argv[1] #"/home/shared/astro/PLAsTiCC/"
     populate_light_curve_folder(path)
     
