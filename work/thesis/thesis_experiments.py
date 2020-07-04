@@ -5,7 +5,7 @@
 
 
 # training on guanaco
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 
 # # Import libraries
@@ -13,8 +13,8 @@ trainingOnGuanaco = True
 # In[2]:
 
 
-import pandas as pd
-import matplotlib.pyplot as plt
+# import pandas as pd
+# import matplotlib.pyplot as plt
 import numpy as np
 
 import torch
@@ -116,16 +116,17 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 
 # # check data loader shape
 
-# training
-print("#### TRAINING ####")
-print("minibatches trainig: ", len(list(trainLoader)))
-print("minibatch trainig size: ", list(trainLoader)[0][0].shape)
+# # training
+# print("#### TRAINING ####")
+# print("minibatches trainig: ", len(list(trainLoader)))
+# print("minibatch trainig size: ", list(trainLoader)[0][0].shape)
 
 
-# testing
-print("\n#### TESTING ####")
-print("minibatches test: ", len(list(testLoader)))
-print("minibatch trainig size: ", list(testLoader)[0][0].shape)
+# # testing
+# print("\n#### TESTING ####")
+# print("minibatches test: ", len(list(testLoader)))
+# print("minibatch trainig size: ", list(testLoader)[0][0].shape)
+
 
 # ## Define autoencoder structure
 # To start with the work, It is going to build a very basic Autoencoder
@@ -517,7 +518,7 @@ if use_gpu:
     model = model.cuda()
 
 # number of epochs
-epochs = 100000
+epochs = 1000
 
 # loss
 train_loss = np.zeros((epochs,))
@@ -547,6 +548,7 @@ print("starting the training")
 for nepoch in range(epochs):
         
     print("epoch:    {0} / {1}".format(nepoch, epochs))
+    
 #     print("\r{0}".format((float(nepoch)/epochs)*100))
 #     sys.stdout.write('\r')
 #     # the exact output you're looking for:
@@ -668,20 +670,27 @@ for nepoch in range(epochs):
         text_file.write(metricsText)
         text_file.close()
 
+        
+    # save losses
+    print("saving losses")
+    losses = np.asarray([train_loss, test_loss]).T
+    np.savetxt("experiments/1/training_losses.csv", losses, delimiter=",")
+    
+    
 print("training has finished")
 
 
 # # Save loss arrays (train and testing)
 
-# In[19]:
+# In[ ]:
 
 
-print("saving losses")
-losses = np.asarray([train_loss, test_loss]).T
-np.savetxt("experiments/1/training_losses.csv", losses, delimiter=",")
+# print("saving losses")
+# losses = np.asarray([train_loss, test_loss]).T
+# np.savetxt("experiments/1/training_losses.csv", losses, delimiter=",")
 
 
-# In[24]:
+# In[ ]:
 
 
 print("experiment has finished")
@@ -689,7 +698,7 @@ print("experiment has finished")
 
 # # Save model
 
-# In[20]:
+# In[ ]:
 
 
 # pathToSaveModel = "/home/leo/Desktop/thesis/work/thesis/models/model"
@@ -703,7 +712,7 @@ print("experiment has finished")
 
 # # Load model
 
-# In[21]:
+# In[ ]:
 
 
 # # model path
@@ -711,7 +720,7 @@ print("experiment has finished")
 # pathToSaveModel = "/home/lbravo/thesis/work/thesis/models/model_guanaco_1"
 
 
-# In[22]:
+# In[ ]:
 
 
 # # check number of parameters
@@ -728,7 +737,7 @@ print("experiment has finished")
 
 # # Check reconstructed light curve
 
-# In[23]:
+# In[ ]:
 
 
 # # reconstruction

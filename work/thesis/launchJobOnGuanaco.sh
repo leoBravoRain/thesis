@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --mem=10gb
 #SBATCH --tasks-per-node=2
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:2
 #SBATCH --partition=intel
 
 ID=$SLURM_JOB_ID
