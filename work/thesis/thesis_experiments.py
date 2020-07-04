@@ -1,16 +1,38 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# # Parameters to experiment
+
 # In[1]:
 
 
 # training on guanaco
 trainingOnGuanaco = True
 
+# number_experiment (this is just a name)
+# priors:
+# 1
+number_experiment = 2
+number_experiment = str(number_experiment)
+
+
+# In[2]:
+
+
+# classes to analyze
+only_these_labels=[16, 92]
+
+# VAE parameters
+latentDim = 20
+hiddenDim = 20
+
+# training
+epochs = 2000
+
 
 # # Import libraries
 
-# In[2]:
+# In[3]:
 
 
 # import pandas as pd
@@ -34,7 +56,7 @@ from plasticc_dataset_torch import get_plasticc_datasets
 
 # # Load data
 
-# In[3]:
+# In[4]:
 
 
 # define path to dataset
@@ -49,19 +71,19 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[4]:
+# In[5]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
 
 # Light curves are tensors are now [bands, [mjd, flux, err, mask],
 # lc_data, lc_label, lc_plasticc_id                              
-torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=[16, 92])
+torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels)
 
 
 # # Ploting one light curve
 
-# In[5]:
+# In[6]:
 
 
 # lc_data, lc_label, lc_plasticc_id = torch_dataset_lazy.__getitem__(123)
@@ -73,7 +95,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=[16, 92
 # print(lc_data.detach().numpy()[0, 0, :])
 
 
-# In[6]:
+# In[7]:
 
 
 # plot_light_curve(torch_dataset_lazy, index_in_dataset=1234)
@@ -81,7 +103,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=[16, 92
 
 # # Spliting data (train/test)
 
-# In[7]:
+# In[8]:
 
 
 # Spliting the data
@@ -98,7 +120,7 @@ trainDataset, testDataset = torch.utils.data.random_split(torch_dataset_lazy, [t
 
 # ## Create a dataloader
 
-# In[8]:
+# In[9]:
 
 
 # # Create data loader (minibatches)
@@ -111,7 +133,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 # trainLoader = torch.utils.data.DataLoader(torch_dataset_lazy, batch_size=256, shuffle=True, num_workers=0)
 
 
-# In[9]:
+# In[10]:
 
 
 # # check data loader shape
@@ -131,7 +153,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 # ## Define autoencoder structure
 # To start with the work, It is going to build a very basic Autoencoder
 
-# In[10]:
+# In[11]:
 
 
 # Buiding autoencoder
@@ -357,7 +379,7 @@ class AutoEncoder(torch.nn.Module):
 
 # ## Defining parameters to Autoencoder
 
-# In[11]:
+# In[12]:
 
 
 # check number of parameters
@@ -365,22 +387,22 @@ class AutoEncoder(torch.nn.Module):
 # hiddenDim = 10
 # inputDim = 72
 
-latentDim = 10
-hiddenDim = 10
+latentDim = latentDim
+hiddenDim = hiddenDim
 inputDim = 72
 
 # defining model
 model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim)
 
 
-# In[12]:
+# In[13]:
 
 
 # # test the model data flow
 # model.forward(list(trainLoader)[0][0]).shape
 
 
-# In[13]:
+# In[14]:
 
 
 # # print("input dimension: {0}".format(len(list(trainLoader))))
@@ -401,7 +423,7 @@ model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = 
 # print("number of parameters: " + str(count))
 
 
-# In[14]:
+# In[15]:
 
 
 from torch.nn import functional as F
@@ -427,7 +449,7 @@ def loss_function(recon_x, x, mu, logvar):
     return BCE + KLD
 
 
-# In[15]:
+# In[16]:
 
 
 from torchvision import transforms
@@ -454,7 +476,7 @@ def normalizeLightCurve(data):
     return data
 
 
-# In[16]:
+# In[17]:
 
 
 # function to generate delta time and flux
@@ -486,22 +508,42 @@ def generateDeltas(data, passBand):
 
 # ## Load the path to save model while training
 
-# In[17]:
+# In[18]:
 
+
+get_ipython().system('ls /home/leo/Desktop/thesis/work/thesis/experiments/')
+
+
+# In[19]:
+
+
+import os
+
+# create experiment's folder
+folder_path = ("/home/lbravo/thesis/work/thesis/experiments/" + number_experiment) if trainingOnGuanaco else ("/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment)
+# !mkdir folder_path
+# os.makedirs(os.path.dirname(folder_path), exist_ok=True)
+
+# check if folder exists
+if not(os.path.isdir(folder_path)):
+        
+    # create folder
+    try:
+        os.mkdir(folder_path)
+    except OSError:
+        print ("Creation of the directory %s failed" % folder_path)
+    else:
+        print ("Successfully created the directory %s " % folder_path)
+else:
+    print("folder already exists")
 
 # define paht to save model while training
-pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/1/model_guanaco_1" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/1/model"
-
-# # local path
-# pathToSaveModel = "/home/leo/Desktop/thesis/work/thesis/models/model"
-
-# # guanaco path
-# # pathToSaveModel = "/home/lbravo/thesis/work/thesis/models/model_guanaco_1"
+pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model_guanaco_1" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
 # ### Training
 
-# In[18]:
+# In[20]:
 
 
 # loss function
@@ -518,7 +560,7 @@ if use_gpu:
     model = model.cuda()
 
 # number of epochs
-epochs = 2000
+epochs = epochs
 
 # loss
 train_loss = np.zeros((epochs,))
@@ -643,7 +685,7 @@ for nepoch in range(epochs):
     if count_early_stop > threshold_early_stop:
         
         print("Early stopping in epoch: ", nepoch)
-        text_file = open("experiments/1/earlyStopping.txt", "w")
+        text_file = open("experiments/" + number_experiment + "/earlyStopping.txt", "w")
         metricsText = "Epoch: {0}\n ES counter: {1}\n, Reconstruction test error: {2}".format(nepoch, count_early_stop, epoch_test_loss)
         text_file.write(metricsText)
         text_file.close()
@@ -665,7 +707,7 @@ for nepoch in range(epochs):
         minTestLossGlobalSoFar = epoch_test_loss
         
         # write metrics
-        text_file = open("experiments/1/bestScoresModelTraining.txt", "w")
+        text_file = open("experiments/" + number_experiment + "/bestScoresModelTraining.txt", "w")
         metricsText = "Epoch: {0}\n Reconstruction test error: {1}".format(nepoch, minTestLossGlobalSoFar)
         text_file.write(metricsText)
         text_file.close()
@@ -674,7 +716,7 @@ for nepoch in range(epochs):
     # save losses
     print("saving losses")
     losses = np.asarray([train_loss, test_loss]).T
-    np.savetxt("experiments/1/training_losses.csv", losses, delimiter=",")
+    np.savetxt("experiments/" + number_experiment + "/training_losses.csv", losses, delimiter=",")
     
     
 print("training has finished")
@@ -682,7 +724,7 @@ print("training has finished")
 
 # # Save loss arrays (train and testing)
 
-# In[ ]:
+# In[21]:
 
 
 # print("saving losses")
@@ -690,7 +732,7 @@ print("training has finished")
 # np.savetxt("experiments/1/training_losses.csv", losses, delimiter=",")
 
 
-# In[ ]:
+# In[22]:
 
 
 print("experiment has finished")
@@ -698,7 +740,7 @@ print("experiment has finished")
 
 # # Save model
 
-# In[ ]:
+# In[23]:
 
 
 # pathToSaveModel = "/home/leo/Desktop/thesis/work/thesis/models/model"
@@ -712,7 +754,7 @@ print("experiment has finished")
 
 # # Load model
 
-# In[ ]:
+# In[24]:
 
 
 # # model path
@@ -720,7 +762,7 @@ print("experiment has finished")
 # pathToSaveModel = "/home/lbravo/thesis/work/thesis/models/model_guanaco_1"
 
 
-# In[ ]:
+# In[25]:
 
 
 # # check number of parameters
@@ -737,7 +779,7 @@ print("experiment has finished")
 
 # # Check reconstructed light curve
 
-# In[ ]:
+# In[26]:
 
 
 # # reconstruction
