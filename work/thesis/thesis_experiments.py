@@ -133,27 +133,61 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 # trainLoader = torch.utils.data.DataLoader(torch_dataset_lazy, batch_size=256, shuffle=True, num_workers=0)
 
 
+# ## Load the path to save model while training
+
 # In[10]:
 
 
-# # check data loader shape
+import os
 
-# # training
-# print("#### TRAINING ####")
-# print("minibatches trainig: ", len(list(trainLoader)))
-# print("minibatch trainig size: ", list(trainLoader)[0][0].shape)
+# create experiment's folder
+folder_path = ("/home/lbravo/thesis/work/thesis/experiments/" + number_experiment) if trainingOnGuanaco else ("/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment)
+# !mkdir folder_path
+# os.makedirs(os.path.dirname(folder_path), exist_ok=True)
+
+# check if folder exists
+if not(os.path.isdir(folder_path)):
+        
+    # create folder
+    try:
+        os.mkdir(folder_path)
+    except OSError:
+        print ("Creation of the directory %s failed" % folder_path)
+    else:
+        print ("Successfully created the directory %s " % folder_path)
+else:
+    print("folder already exists")
+
+# define paht to save model while training
+pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model_guanaco_1" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# # testing
-# print("\n#### TESTING ####")
-# print("minibatches test: ", len(list(testLoader)))
-# print("minibatch trainig size: ", list(testLoader)[0][0].shape)
+# # Save dataset description
+
+# In[11]:
+
+
+# check data loader shape
+text_file = open("experiments/" + number_experiment + "/datasetDescription.txt", "w")
+
+# training
+text_file.write("#### TRAINING ####")
+text_file.write("\nminibatches trainig: "+ str(len(list(trainLoader))))
+text_file.write("\nminibatch trainig size: " + str(list(trainLoader)[0][0].shape))
+
+
+# testing
+text_file.write("\n#### TESTING ####")
+text_file.write("\nminibatches test: "+ str(len(list(testLoader))))
+text_file.write("\nminibatch trainig size: " + str(list(testLoader)[0][0].shape))
+
+text_file.close()
 
 
 # ## Define autoencoder structure
 # To start with the work, It is going to build a very basic Autoencoder
 
-# In[11]:
+# In[12]:
 
 
 # Buiding autoencoder
@@ -379,7 +413,7 @@ class AutoEncoder(torch.nn.Module):
 
 # ## Defining parameters to Autoencoder
 
-# In[12]:
+# In[13]:
 
 
 # check number of parameters
@@ -395,14 +429,14 @@ inputDim = 72
 model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim)
 
 
-# In[13]:
+# In[14]:
 
 
 # # test the model data flow
 # model.forward(list(trainLoader)[0][0]).shape
 
 
-# In[14]:
+# In[15]:
 
 
 # # print("input dimension: {0}".format(len(list(trainLoader))))
@@ -423,7 +457,7 @@ model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = 
 # print("number of parameters: " + str(count))
 
 
-# In[15]:
+# In[16]:
 
 
 from torch.nn import functional as F
@@ -449,7 +483,7 @@ def loss_function(recon_x, x, mu, logvar):
     return BCE + KLD
 
 
-# In[16]:
+# In[17]:
 
 
 from torchvision import transforms
@@ -476,7 +510,7 @@ def normalizeLightCurve(data):
     return data
 
 
-# In[17]:
+# In[18]:
 
 
 # function to generate delta time and flux
@@ -506,44 +540,9 @@ def generateDeltas(data, passBand):
     return dataToUse
 
 
-# ## Load the path to save model while training
-
-# In[18]:
-
-
-get_ipython().system('ls /home/leo/Desktop/thesis/work/thesis/experiments/')
-
-
-# In[19]:
-
-
-import os
-
-# create experiment's folder
-folder_path = ("/home/lbravo/thesis/work/thesis/experiments/" + number_experiment) if trainingOnGuanaco else ("/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment)
-# !mkdir folder_path
-# os.makedirs(os.path.dirname(folder_path), exist_ok=True)
-
-# check if folder exists
-if not(os.path.isdir(folder_path)):
-        
-    # create folder
-    try:
-        os.mkdir(folder_path)
-    except OSError:
-        print ("Creation of the directory %s failed" % folder_path)
-    else:
-        print ("Successfully created the directory %s " % folder_path)
-else:
-    print("folder already exists")
-
-# define paht to save model while training
-pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model_guanaco_1" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
-
-
 # ### Training
 
-# In[20]:
+# In[19]:
 
 
 # loss function
@@ -724,7 +723,7 @@ print("training has finished")
 
 # # Save loss arrays (train and testing)
 
-# In[21]:
+# In[20]:
 
 
 # print("saving losses")
@@ -732,7 +731,7 @@ print("training has finished")
 # np.savetxt("experiments/1/training_losses.csv", losses, delimiter=",")
 
 
-# In[22]:
+# In[21]:
 
 
 print("experiment has finished")
@@ -740,7 +739,7 @@ print("experiment has finished")
 
 # # Save model
 
-# In[23]:
+# In[22]:
 
 
 # pathToSaveModel = "/home/leo/Desktop/thesis/work/thesis/models/model"
@@ -754,7 +753,7 @@ print("experiment has finished")
 
 # # Load model
 
-# In[24]:
+# In[23]:
 
 
 # # model path
@@ -762,7 +761,7 @@ print("experiment has finished")
 # pathToSaveModel = "/home/lbravo/thesis/work/thesis/models/model_guanaco_1"
 
 
-# In[25]:
+# In[24]:
 
 
 # # check number of parameters
@@ -779,7 +778,7 @@ print("experiment has finished")
 
 # # Check reconstructed light curve
 
-# In[26]:
+# In[25]:
 
 
 # # reconstruction
