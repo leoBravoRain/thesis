@@ -5,7 +5,7 @@
 
 
 # training on guanaco
-trainingOnGuanaco = False
+trainingOnGuanaco = True
 
 
 # # Import libraries
@@ -518,7 +518,7 @@ if use_gpu:
     model = model.cuda()
 
 # number of epochs
-epochs = 1000
+epochs = 2000
 
 # loss
 train_loss = np.zeros((epochs,))
