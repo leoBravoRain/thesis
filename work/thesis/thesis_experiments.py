@@ -83,7 +83,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Ploting one light curve
 
-# In[6]:
+# In[ ]:
 
 
 # lc_data, lc_label, lc_plasticc_id = torch_dataset_lazy.__getitem__(123)
@@ -95,7 +95,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 # print(lc_data.detach().numpy()[0, 0, :])
 
 
-# In[7]:
+# In[ ]:
 
 
 # plot_light_curve(torch_dataset_lazy, index_in_dataset=1234)
@@ -167,21 +167,21 @@ pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experi
 # In[11]:
 
 
-# check data loader shape
-text_file = open("experiments/" + number_experiment + "/datasetDescription.txt", "w")
+# # check data loader shape
+# text_file = open("experiments/" + number_experiment + "/datasetDescription.txt", "w")
 
-# training
-text_file.write("#### TRAINING ####")
-text_file.write("\nminibatches trainig: "+ str(len(list(trainLoader))))
-text_file.write("\nminibatch trainig size: " + str(list(trainLoader)[0][0].shape))
+# # training
+# text_file.write("#### TRAINING ####")
+# text_file.write("\nminibatches trainig: "+ str(len(list(trainLoader))))
+# text_file.write("\nminibatch trainig size: " + str(list(trainLoader)[0][0].shape))
 
 
-# testing
-text_file.write("\n#### TESTING ####")
-text_file.write("\nminibatches test: "+ str(len(list(testLoader))))
-text_file.write("\nminibatch trainig size: " + str(list(testLoader)[0][0].shape))
+# # testing
+# text_file.write("\n#### TESTING ####")
+# text_file.write("\nminibatches test: "+ str(len(list(testLoader))))
+# text_file.write("\nminibatch trainig size: " + str(list(testLoader)[0][0].shape))
 
-text_file.close()
+# text_file.close()
 
 
 # ## Define autoencoder structure
