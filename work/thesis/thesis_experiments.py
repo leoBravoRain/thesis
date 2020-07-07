@@ -27,7 +27,7 @@ latentDim = 20
 hiddenDim = 20
 
 # training
-epochs = 2000
+epochs = 1000
 
 
 # # Import libraries
