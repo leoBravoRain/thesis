@@ -7,12 +7,12 @@
 
 
 # training on guanaco
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 2
+number_experiment = 4
 number_experiment = str(number_experiment)
 
 
@@ -24,10 +24,15 @@ only_these_labels=[16, 92]
 
 # VAE parameters
 latentDim = 20
-hiddenDim = 20
+hiddenDim = 60
 
 # training
 epochs = 1000
+
+# band
+passband = 5
+
+batch_training_size = 128
 
 
 # # Import libraries
@@ -45,7 +50,7 @@ from torch.utils import data
 # from tqdm import tqdm_notebook
 
 # %matplotlib inline
-# %matplotlib notebook
+get_ipython().run_line_magic('matplotlib', 'notebook')
 
 # import functions to load dataset
 import sys
@@ -83,7 +88,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Ploting one light curve
 
-# In[ ]:
+# In[6]:
 
 
 # lc_data, lc_label, lc_plasticc_id = torch_dataset_lazy.__getitem__(123)
@@ -95,7 +100,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 # print(lc_data.detach().numpy()[0, 0, :])
 
 
-# In[ ]:
+# In[7]:
 
 
 # plot_light_curve(torch_dataset_lazy, index_in_dataset=1234)
@@ -126,7 +131,7 @@ trainDataset, testDataset = torch.utils.data.random_split(torch_dataset_lazy, [t
 # # Create data loader (minibatches)
 
 # # train loader
-trainLoader = torch.utils.data.DataLoader(trainDataset, batch_size=256, shuffle=True, num_workers = 4)
+trainLoader = torch.utils.data.DataLoader(trainDataset, batch_size= batch_training_size, shuffle=True, num_workers = 4)
 
 # # test loader
 testLoader = torch.utils.data.DataLoader(testDataset)
@@ -248,7 +253,7 @@ class Encoder(torch.nn.Module):
         outputTimeConv = self.activationConv(self.conv1Time(x[:, 0, :].unsqueeze(1)))
         
         # conv to magnitude
-        outputMagConv = self.activationConv(self.conv1Mag(x[:, 0, :].unsqueeze(1)))
+        outputMagConv = self.activationConv(self.conv1Mag(x[:, 1, :].unsqueeze(1)))
         
 #         print("output conv1 shape: {0}".format(outputMagConv.shape))
 #         print("output conv1 shape: {0}".format(outputTimeConv.shape))
@@ -425,6 +430,8 @@ latentDim = latentDim
 hiddenDim = hiddenDim
 inputDim = 72
 
+passband = passband
+
 # defining model
 model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim)
 
@@ -545,6 +552,7 @@ def generateDeltas(data, passBand):
 # In[19]:
 
 
+import matplotlib.pyplot as plt
 # loss function
 # criterion = torch.nn.MSELoss(reduction = "sum")
 
@@ -569,10 +577,10 @@ test_loss = np.zeros((epochs,))
 minTestLossGlobalSoFar = float("inf")
 
 # # loss plot
-# fig, ax = plt.subplots(figsize = (3, 3), tight_layout = True)
-# # fig, ax = plt.subplots()
-# ax.set_xlabel("Epoch")
-# ax.set_ylabel("Error")
+fig, ax = plt.subplots(figsize = (3, 3), tight_layout = True)
+# fig, ax = plt.subplots()
+ax.set_xlabel("Epoch")
+ax.set_ylabel("Error")
 
 # plt.legend()
 
@@ -609,7 +617,7 @@ for nepoch in range(epochs):
         if use_gpu:
             
 #             data = data.type(torch.FloatTensor).cuda()
-            data = generateDeltas(data, 0).type(torch.FloatTensor).cuda()
+            data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
 #             print(data.device)
 #             print(model.device())
             outputs = model.forward(data)
@@ -617,7 +625,7 @@ for nepoch in range(epochs):
             
         else:
                         
-            data = generateDeltas(data, 0).type(torch.FloatTensor)
+            data = generateDeltas(data, passband).type(torch.FloatTensor)
 #             generateDeltas(data, 0)
             outputs = model.forward(data.type(torch.FloatTensor))
             mu, logvar = model.encoder.forward(data.type(torch.FloatTensor))
@@ -630,7 +638,7 @@ for nepoch in range(epochs):
         optimizer.step()
         epoch_train_loss += loss.item()
     
-    train_loss[nepoch] = epoch_train_loss
+    train_loss[nepoch] = epoch_train_loss / train_size
     
     # test
     epoch_test_loss = 0
@@ -641,14 +649,14 @@ for nepoch in range(epochs):
         
         if use_gpu:
             
-            data = generateDeltas(data, 0).type(torch.FloatTensor).cuda()
+            data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
 #             data = data.type(torch.FloatTensor).cuda()
             outputs = model.forward(data)
             mu, logvar = model.encoder.forward(data.type(torch.FloatTensor).cuda())
         
         else:
 #             data = data.type(torch.FloatTensor)
-            data = generateDeltas(data, 0).type(torch.FloatTensor)
+            data = generateDeltas(data, passband).type(torch.FloatTensor)
             
             outputs = model.forward(data)
             
@@ -659,13 +667,13 @@ for nepoch in range(epochs):
         
         epoch_test_loss += loss.item()
     
-    test_loss[nepoch] = epoch_test_loss
+    test_loss[nepoch] = epoch_test_loss / test_size
     
 #     # plot loss
-#     ax.plot(train_loss[0: nepoch], label = "train", linewidth = 3, c = "red") 
-#     ax.plot(test_loss[0: nepoch], label = "test", linestyle = "--", linewidth = 3, c = "green") 
+    ax.plot(train_loss[0: nepoch], label = "train", linewidth = 3, c = "red") 
+    ax.plot(test_loss[0: nepoch], label = "test", linestyle = "--", linewidth = 3, c = "green") 
     
-#     fig.canvas.draw()
+    fig.canvas.draw()
     
     #### Early stopping #####
     
@@ -723,7 +731,7 @@ print("training has finished")
 
 # # Save loss arrays (train and testing)
 
-# In[20]:
+# In[ ]:
 
 
 # print("saving losses")
@@ -731,7 +739,7 @@ print("training has finished")
 # np.savetxt("experiments/1/training_losses.csv", losses, delimiter=",")
 
 
-# In[21]:
+# In[ ]:
 
 
 print("experiment has finished")
@@ -739,7 +747,7 @@ print("experiment has finished")
 
 # # Save model
 
-# In[22]:
+# In[ ]:
 
 
 # pathToSaveModel = "/home/leo/Desktop/thesis/work/thesis/models/model"
@@ -753,7 +761,7 @@ print("experiment has finished")
 
 # # Load model
 
-# In[23]:
+# In[ ]:
 
 
 # # model path
@@ -761,7 +769,7 @@ print("experiment has finished")
 # pathToSaveModel = "/home/lbravo/thesis/work/thesis/models/model_guanaco_1"
 
 
-# In[24]:
+# In[ ]:
 
 
 # # check number of parameters
@@ -778,7 +786,7 @@ print("experiment has finished")
 
 # # Check reconstructed light curve
 
-# In[25]:
+# In[ ]:
 
 
 # # reconstruction
