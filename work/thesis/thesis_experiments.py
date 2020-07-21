@@ -496,8 +496,6 @@ def loss_function(recon_x, x, mu, logvar):
 # In[17]:
 
 
-from torchvision import transforms
-
 # normalize light curve
 # data: [batch size, 2 channels (time and magnitude), light curve length]
 def normalizeLightCurve(data):
@@ -555,7 +553,6 @@ def generateDeltas(data, passBand):
 # In[19]:
 
 
-import matplotlib.pyplot as plt
 # loss function
 # criterion = torch.nn.MSELoss(reduction = "sum")
 
