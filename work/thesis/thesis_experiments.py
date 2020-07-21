@@ -12,7 +12,7 @@ trainingOnGuanaco = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 4
+number_experiment = 1
 number_experiment = str(number_experiment)
 
 
@@ -24,7 +24,7 @@ only_these_labels=[16, 92]
 
 # VAE parameters
 latentDim = 20
-hiddenDim = 60
+hiddenDim = 20
 
 # training
 epochs = 1000
@@ -50,7 +50,7 @@ from torch.utils import data
 # from tqdm import tqdm_notebook
 
 # %matplotlib inline
-get_ipython().run_line_magic('matplotlib', 'notebook')
+# %matplotlib notebook
 
 # import functions to load dataset
 import sys
@@ -121,6 +121,9 @@ test_size = torch_dataset_lazy.__len__() - train_size
 
 # spliting the torch dataset
 trainDataset, testDataset = torch.utils.data.random_split(torch_dataset_lazy, [train_size, test_size])
+
+print("train size:", train_size)
+print("test size:", test_size)
 
 
 # ## Create a dataloader
@@ -576,11 +579,11 @@ test_loss = np.zeros((epochs,))
 # min global test loss 
 minTestLossGlobalSoFar = float("inf")
 
-# # loss plot
-fig, ax = plt.subplots(figsize = (3, 3), tight_layout = True)
-# fig, ax = plt.subplots()
-ax.set_xlabel("Epoch")
-ax.set_ylabel("Error")
+# # # loss plot
+# fig, ax = plt.subplots(figsize = (3, 3), tight_layout = True)
+# # fig, ax = plt.subplots()
+# ax.set_xlabel("Epoch")
+# ax.set_ylabel("Error")
 
 # plt.legend()
 
@@ -669,11 +672,11 @@ for nepoch in range(epochs):
     
     test_loss[nepoch] = epoch_test_loss / test_size
     
-#     # plot loss
-    ax.plot(train_loss[0: nepoch], label = "train", linewidth = 3, c = "red") 
-    ax.plot(test_loss[0: nepoch], label = "test", linestyle = "--", linewidth = 3, c = "green") 
+# #     # plot loss
+#     ax.plot(train_loss[0: nepoch], label = "train", linewidth = 3, c = "red") 
+#     ax.plot(test_loss[0: nepoch], label = "test", linestyle = "--", linewidth = 3, c = "green") 
     
-    fig.canvas.draw()
+#     fig.canvas.draw()
     
     #### Early stopping #####
     
