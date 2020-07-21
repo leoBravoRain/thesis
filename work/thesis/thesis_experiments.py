@@ -7,7 +7,7 @@
 
 
 # training on guanaco
-trainingOnGuanaco = False
+trainingOnGuanaco = True
 
 # number_experiment (this is just a name)
 # priors:
