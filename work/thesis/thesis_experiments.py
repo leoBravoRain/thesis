@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# # MAKE A COPY BEFORE PULLING RESULTS FROM GUANACO
+
 # # Parameters to experiment
 
-# In[1]:
+# In[26]:
 
 
 # training on guanaco
@@ -16,32 +18,48 @@ number_experiment = 1
 number_experiment = str(number_experiment)
 
 
-# In[2]:
+# In[27]:
 
 
 # classes to analyze
-only_these_labels=[16, 92]
+# 42,  90,  16,  67,  62, 993,  92,  52,  88,  65, 991, 992,  15,
+#        95,   6,  53, 994,  64
+# only_these_labels = [16, 92, 53]
+# 53 has 24 light curves
+
+only_these_labels = [16]
+# only_these_labels = [16, 92]
+# only_these_labels = [42,  90,  16,  67,  62, 993,  92,  52,  88,  65, 991, 992,  15,
+#         95,   6,  53, 994,  64]
 
 # VAE parameters
-latentDim = 20
-hiddenDim = 20
-
+latentDim = 100
+hiddenDim = 100
+inputDim = 72
 # training
 epochs = 1000
 
 # band
+# passband = 5
 passband = 5
 
 batch_training_size = 128
 
 
+# In[28]:
+
+
+# training params
+learning_rate = 1e-3
+
+
 # # Import libraries
 
-# In[3]:
+# In[36]:
 
 
-# import pandas as pd
-# import matplotlib.pyplot as plt
+import pandas as pd
+import matplotlib.pyplot as plt
 import numpy as np
 
 import torch
@@ -49,7 +67,6 @@ from torch.utils import data
 
 # from tqdm import tqdm_notebook
 
-# %matplotlib inline
 # %matplotlib notebook
 
 # import functions to load dataset
@@ -58,25 +75,21 @@ sys.path.append("./codesToDatasets")
 from plasticc_dataset_torch import get_plasticc_datasets
 # from plasticc_plotting import plot_light_curve
 
+import math
+
 
 # # Load data
 
-# In[4]:
+# In[30]:
 
 
 # define path to dataset
-
-pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo/Downloads/plasticc_torch/"
-# path to file in guanaco
-# pathToFile = "/home/shared/astro/PLAsTiCC/"
-
-# path to file in local 
-# pathToFile = "/home/leo/Downloads/plasticc_torch/"
+pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo/Downloads/plasticc_torch-master/"
 
 
 # ## Loading dataset with pytorch tool
 
-# In[5]:
+# In[31]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -88,7 +101,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Ploting one light curve
 
-# In[6]:
+# In[32]:
 
 
 # lc_data, lc_label, lc_plasticc_id = torch_dataset_lazy.__getitem__(123)
@@ -100,7 +113,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 # print(lc_data.detach().numpy()[0, 0, :])
 
 
-# In[7]:
+# In[33]:
 
 
 # plot_light_curve(torch_dataset_lazy, index_in_dataset=1234)
@@ -108,33 +121,46 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[8]:
+# In[34]:
 
 
 # Spliting the data
 
+# print(torch_dataset_lazy.__len__())
+
 # selecting train splitting
 train_size = int(0.8 * torch_dataset_lazy.__len__())
+#print(train_size)
 
 # getting test splitting
-test_size = torch_dataset_lazy.__len__() - train_size
+validation_size = math.floor((torch_dataset_lazy.__len__() - train_size)/2)
+#print(validation_size)
+
+# getting test splitting
+test_size = torch_dataset_lazy.__len__() - train_size - validation_size
+#print(test_size)
 
 # spliting the torch dataset
-trainDataset, testDataset = torch.utils.data.random_split(torch_dataset_lazy, [train_size, test_size])
+trainDataset, validationDataset,  testDataset = torch.utils.data.random_split(torch_dataset_lazy, [train_size, validation_size, test_size])
 
 print("train size:", train_size)
+print("validation size: ", validation_size)
 print("test size:", test_size)
+print("sum: ", train_size+ validation_size + test_size)
 
 
 # ## Create a dataloader
 
-# In[9]:
+# In[35]:
 
 
 # # Create data loader (minibatches)
 
 # # train loader
 trainLoader = torch.utils.data.DataLoader(trainDataset, batch_size= batch_training_size, shuffle=True, num_workers = 4)
+
+# validation loader
+validationLoader = torch.utils.data.DataLoader(validationDataset, batch_size= batch_training_size, shuffle=True, num_workers = 4)
 
 # # test loader
 testLoader = torch.utils.data.DataLoader(testDataset)
@@ -143,7 +169,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 
 # ## Load the path to save model while training
 
-# In[10]:
+# In[11]:
 
 
 import os
@@ -167,12 +193,22 @@ else:
     print("folder already exists")
 
 # define paht to save model while training
-pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model_guanaco_1" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
+pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
+
+
+# In[12]:
+
+
+# store varibales on file
+text_file = open("experiments/" + number_experiment + "/experimentParameters.txt", "w")
+text = "N° experiment: {7}\n Classes: {0}\n Latent dimension: {1}\n Hidden dimension: {2}\n Input dimension: {3}\n Passband: {4}\n Learning rate: {5}\n Batch training size: {6}".format(only_these_labels, latentDim, hiddenDim, inputDim, passband, learning_rate, batch_training_size, number_experiment)
+text_file.write(text)
+text_file.close()
 
 
 # # Save dataset description
 
-# In[11]:
+# In[13]:
 
 
 # # check data loader shape
@@ -195,7 +231,7 @@ pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experi
 # ## Define autoencoder structure
 # To start with the work, It is going to build a very basic Autoencoder
 
-# In[12]:
+# In[14]:
 
 
 # Buiding autoencoder
@@ -212,23 +248,20 @@ class Encoder(torch.nn.Module):
         
         # 1 Convolution layer
         # Conv1d(input channel, output channel, kernel size)
-        self.conv1 = torch.nn.Conv1d(1,64,3)
+#         self.conv1 = torch.nn.Conv1d(1,64,3)
+        self.conv1 = torch.nn.Conv1d(1,64,3, stride = 2)
         
-        # this is to consider time and magnitude
-        # we should use shared weights?
-        self.conv1Time = torch.nn.Conv1d(1, 64, 3)
-        self.conv1Mag = torch.nn.Conv1d(1, 64, 3)
         
         # 2 Convolution layer
         # Conv1d(input channel, output channel, kernel size)
-        self.conv2 = torch.nn.Conv1d(64, 32, 3)
-        
-        # time and magnitude conv
-        self.conv2Time = torch.nn.Conv1d(64, 32, 3)
-        self.conv2Mag = torch.nn.Conv1d(64, 32, 3)
+#         self.conv2 = torch.nn.Conv1d(64, 32, 3)
+        self.conv2 = torch.nn.Conv1d(64, 32, 3, stride = 2)
         
         # linear layer
-        self.hidden1 = torch.nn.Linear(2144*2, hidden_dim)
+#         self.hidden1 = torch.nn.Linear(2144*2, hidden_dim)
+        self.hidden1 = torch.nn.Linear(1088, hidden_dim)
+        
+#         self.hidden2 = torch.nn.Linear(hidden_dim, hidden_dim)
         
         # mu
         self.mu = torch.nn.Linear(hidden_dim, latent_dim)
@@ -237,9 +270,11 @@ class Encoder(torch.nn.Module):
         self.logVar = torch.nn.Linear(hidden_dim, latent_dim)
         
         # activation function
-        self.activationConv = torch.nn.ReLU() #max(0, x)
+#         self.activationConv = torch.nn.ReLU() #max(0, x)
+        self.activationConv = torch.nn.Tanh() #max(0, x)
     
-        self.activationLinear = torch.nn.Tanh()
+#         self.activationLinear = torch.nn.Tanh()
+        self.activationLinear = torch.nn.ReLU()
 
     # forward method
     def forward(self, x):
@@ -251,12 +286,14 @@ class Encoder(torch.nn.Module):
         # convolution 1
         # x -> conv -> act -> ouput
         # shape should be: [batch_size, number of ouput channels (64), length of output from convolution]
-
-        #conv to time
-        outputTimeConv = self.activationConv(self.conv1Time(x[:, 0, :].unsqueeze(1)))
         
+        #conv to time
+#         outputTimeConv = self.activationConv(self.conv1Time(x[:, 0, :].unsqueeze(1)))
+        outputTimeConv = self.activationConv(self.conv1(x[:, 0, :].unsqueeze(1)))
+    
         # conv to magnitude
-        outputMagConv = self.activationConv(self.conv1Mag(x[:, 1, :].unsqueeze(1)))
+#         outputMagConv = self.activationConv(self.conv1Mag(x[:, 1, :].unsqueeze(1)))
+        outputMagConv = self.activationConv(self.conv1(x[:, 1, :].unsqueeze(1)))
         
 #         print("output conv1 shape: {0}".format(outputMagConv.shape))
 #         print("output conv1 shape: {0}".format(outputTimeConv.shape))
@@ -286,7 +323,14 @@ class Encoder(torch.nn.Module):
 #         print("concatenate output shape: ", output.shape)
         
         # x -> hidden1 -> activation
+#         print("before linear layer: {0}".format(output.shape))
         output = self.activationLinear(self.hidden1(output))
+        
+#         second hidden layer
+#         output = self.activationLinear(self.hidden2(output))
+#         output = self.activationLinear(self.hidden2(output))
+    
+#         output = self.hidden1(output)
 #         print("hidden1 output shape: {0}".format(output.shape))
         
         # get mu
@@ -315,14 +359,16 @@ class Decoder(torch.nn.Module):
         
         # 1 ConvolutionTrans layer
         self.convTrans1 = torch.nn.ConvTranspose1d(32, 64, 3)
-        
+                
         # 2 ConvolutionTrans layer
         self.convTrans2 = torch.nn.ConvTranspose1d(64, 1, 3)
 
         # activation function
         self.activationConv = torch.nn.ReLU() #max(0, x)
+#         self.activationConv = torch.nn.Tanh() #max(0, x)
     
         self.activationLinear = torch.nn.Tanh()
+#         self.activationLinear = torch.nn.ReLU()
         
     # forward method
     def forward(self, z):
@@ -394,6 +440,17 @@ class AutoEncoder(torch.nn.Module):
             eps = eps.cuda()
         return eps.mul(std.unsqueeze(1)).add(mu.unsqueeze(1))
     
+    def get_latent_variables(self, x):
+        
+        # get mu and logvar
+        mu, logVar = self.encoder(x)
+        
+        # sampling to get the latent variables
+        z = self.sampling(mu, logVar)
+        
+        # return values
+        return z
+    
     # forward method (how to the nn works)
     def forward(self, x):
         
@@ -416,12 +473,13 @@ class AutoEncoder(torch.nn.Module):
         decOutput = self.decoder(z)
 #         print("output decoder size: {0}".format(decOutput.shape))
         
-        return decOutput
+        # agregar mu, logvar, decOutput
+        return decOutput, mu, logVar
 
 
 # ## Defining parameters to Autoencoder
 
-# In[13]:
+# In[15]:
 
 
 # check number of parameters
@@ -431,7 +489,7 @@ class AutoEncoder(torch.nn.Module):
 
 latentDim = latentDim
 hiddenDim = hiddenDim
-inputDim = 72
+inputDim = inputDim
 
 passband = passband
 
@@ -439,14 +497,7 @@ passband = passband
 model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim)
 
 
-# In[14]:
-
-
-# # test the model data flow
-# model.forward(list(trainLoader)[0][0]).shape
-
-
-# In[15]:
+# In[16]:
 
 
 # # print("input dimension: {0}".format(len(list(trainLoader))))
@@ -467,33 +518,57 @@ model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = 
 # print("number of parameters: " + str(count))
 
 
-# In[16]:
+# In[17]:
+
+
+# it builds a mask for the deltas. It compares the next with the previous one element.
+# original mask: [1,1, 0, 0]
+# delta mask: [1, 0, 0]
+# The same results is got with original_mask[:, 1:]
+def generate_delta_mask(mask):
+    
+    # generate delta mask
+#     mask_delta = mask[:, 1:].type(torch.BoolTensor) & mask[:, :-1].type(torch.BoolTensor)
+    mask_delta = mask[:, 1:]
+    
+    return mask_delta
+
+
+# In[18]:
 
 
 from torch.nn import functional as F
 
 # Reconstruction + KL divergence losses summed over all elements and batch
-def loss_function(recon_x, x, mu, logvar):
+def loss_function(recon_x, x, mu, logvar, mask):
+        
+    # generate delta mask
+    mask = generate_delta_mask(mask).cuda()
     
-#     print("reconstruction: {0}".format(recon_x))
-#     print("x: {0}".format(x))
-#     print("mu: {0}".format(mu))
-#     print("logvar: {0}".format(logvar))
+    # this is considering mask
+    # [batch size, 2 (time, mag), lenght of serie]
+    BCE = F.mse_loss(recon_x, x, reduction='none')
+        
+    # applyting mask
+    BCE[:, 0, :] = BCE[:, 0, :] * mask
+    BCE[:, 1, :] = BCE[:, 1, :] * mask
     
-#     BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')
-    BCE = F.mse_loss(recon_x, x, reduction='sum')
+    # reducttion 
+    BCE = torch.sum(BCE) / (BCE.shape[0]*BCE.shape[1]*BCE.shape[2])
+
+
     # see Appendix B from VAE paper:
     # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
     # https://arxiv.org/abs/1312.6114
     # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    
-#     print(BCE)
+    # Uncomment this if the previous implementation is not working
+#     KLD = 0
     
     return BCE + KLD
 
 
-# In[17]:
+# In[19]:
 
 
 # normalize light curve
@@ -518,7 +593,7 @@ def normalizeLightCurve(data):
     return data
 
 
-# In[18]:
+# In[20]:
 
 
 # function to generate delta time and flux
@@ -542,7 +617,8 @@ def generateDeltas(data, passBand):
 #     print("data to use shape: {0}".format(dataToUse.shape))
     
     # normalize data
-    dataToUse = normalizeLightCurve(dataToUse)
+    # this was commented because it considerate that delta is already a normalization
+#     dataToUse = normalizeLightCurve(dataToUse)
     
     # returning data
     return dataToUse
@@ -550,14 +626,11 @@ def generateDeltas(data, passBand):
 
 # ### Training
 
-# In[19]:
+# In[20]:
 
-
-# loss function
-# criterion = torch.nn.MSELoss(reduction = "sum")
 
 # optimizer
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # use of GPU flag
 use_gpu = True
@@ -577,105 +650,120 @@ test_loss = np.zeros((epochs,))
 minTestLossGlobalSoFar = float("inf")
 
 # # # loss plot
-# fig, ax = plt.subplots(figsize = (3, 3), tight_layout = True)
-# # fig, ax = plt.subplots()
-# ax.set_xlabel("Epoch")
-# ax.set_ylabel("Error")
+# if it is not cluster
+if not trainingOnGuanaco:
+    
+    fig, ax = plt.subplots(figsize = (3, 3), tight_layout = True)
+    # # fig, ax = plt.subplots()
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Error")
 
-# plt.legend()
 
-# plt.axis([0,1000,0,10])
-# plt.show()
 
 # early stopping
 prior_test_error = 0
 count_early_stop = 0
 threshold_early_stop = 20
 
+
 print("starting the training")
 
+
+# epoch
 for nepoch in range(epochs):
         
     print("epoch:    {0} / {1}".format(nepoch, epochs))
     
-#     print("\r{0}".format((float(nepoch)/epochs)*100))
-#     sys.stdout.write('\r')
-#     # the exact output you're looking for:
-#     sys.stdout.write("[%-20s] %d%%" % ('='*nepoch, 5*nepoch))
-#     sys.stdout.flush()
-#     sleep(0.25)
     
-    # train
+    
+     
+    ######## Train ###########
     epoch_train_loss = 0
     
-    for data in trainLoader:
+    for data_ in trainLoader:
         
-        data = data[0]
+        data = data_[0]
         
         optimizer.zero_grad()
-        
+            
+        # gpu
         if use_gpu:
             
-#             data = data.type(torch.FloatTensor).cuda()
+            # this take the deltas (time and magnitude)
             data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
-#             print(data.device)
-#             print(model.device())
-            outputs = model.forward(data)
-            mu, logvar = model.encoder.forward(data.type(torch.FloatTensor).cuda())
             
+            # get modelo output
+            outputs, mu, logvar = model.forward(data)
+        
+        # no gpu
         else:
                         
             data = generateDeltas(data, passband).type(torch.FloatTensor)
-#             generateDeltas(data, 0)
-            outputs = model.forward(data.type(torch.FloatTensor))
-            mu, logvar = model.encoder.forward(data.type(torch.FloatTensor))
+            outputs, mu, logvar = model.forward(data)
         
-#         loss = criterion(outputs, data)
+    
         # use KLD + MSE
-        loss = loss_function(outputs, data, mu, logvar)
-#         print(loss)
+        # output model, original data (deltas), mu, logvar, mask
+        loss = loss_function(outputs, data, mu, logvar, data_[0][:, passband, 3, :])
+        
+        # backpropagation
         loss.backward()
+        
+        # update parameters
         optimizer.step()
+        
+        # add loss value (of the currrent minibatch)
         epoch_train_loss += loss.item()
     
+    # get epoch loss value
     train_loss[nepoch] = epoch_train_loss / train_size
     
-    # test
+    
+    
+    
+    ##### Testing ########
+    
     epoch_test_loss = 0
     
-    for data in testLoader:
+    # minibatches
+    for data_ in validationLoader:
         
-        data = data[0]
+        data = data_[0]
         
         if use_gpu:
             
             data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
-#             data = data.type(torch.FloatTensor).cuda()
-            outputs = model.forward(data)
-            mu, logvar = model.encoder.forward(data.type(torch.FloatTensor).cuda())
+            outputs, mu, logvar = model.forward(data)
         
         else:
-#             data = data.type(torch.FloatTensor)
             data = generateDeltas(data, passband).type(torch.FloatTensor)
-            
-            outputs = model.forward(data)
-            
-            mu, logvar = model.encoder.forward(data.type(torch.FloatTensor))
+            outputs, mu, logvar = model.forward(data)
         
-#         loss = criterion(outputs, data)
-        loss = loss_function(outputs, data, mu, logvar)
+        # get minibatch loss value
+        loss = loss_function(outputs, data, mu, logvar, data_[0][:, passband, 3, :])
         
+        #  store minibatch loss value
         epoch_test_loss += loss.item()
     
+    # get epoch test loss value
     test_loss[nepoch] = epoch_test_loss / test_size
     
-# #     # plot loss
-#     ax.plot(train_loss[0: nepoch], label = "train", linewidth = 3, c = "red") 
-#     ax.plot(test_loss[0: nepoch], label = "test", linestyle = "--", linewidth = 3, c = "green") 
     
-#     fig.canvas.draw()
+    
+
+    # plot loss values
+    # if it's not cluster
+    if not trainingOnGuanaco:
+
+        ax.plot(train_loss[0: nepoch], label = "train", linewidth = 3, c = "red") 
+        ax.plot(test_loss[0: nepoch], label = "test", linestyle = "--", linewidth = 3, c = "green") 
+        fig.canvas.draw()
+    
+    
     
     #### Early stopping #####
+    
+    
     
     # if new test loss is greater than the older one
     count_early_stop += 1
@@ -720,95 +808,382 @@ for nepoch in range(epochs):
         text_file.close()
 
         
+        
     # save losses
     print("saving losses")
     losses = np.asarray([train_loss, test_loss]).T
     np.savetxt("experiments/" + number_experiment + "/training_losses.csv", losses, delimiter=",")
     
+
     
+
+# final message
 print("training has finished")
 
 
-# # Save loss arrays (train and testing)
+# ### Stop execution if it's on cluster
+
+# In[37]:
+
+
+import sys
+if  trainingOnGuanaco:
+    
+    sys.exit("Exit from code, because we are in cluster. Training has finished.")
+
+
+# # Analyzing training
+
+# In[21]:
+
+
+# load losses array
+losses = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/"+ number_experiment + "/training_losses.csv")
+
+# plot losses
+fig, ax = plt.subplots()
+
+# axis
+ax.set_xlabel("N° epoch")
+ax.set_ylabel("Loss")
+
+# plot
+ax.plot(losses.iloc[:, 0], label = "train")
+ax.plot(losses.iloc[:, 1], label = "test")
+ax.legend()
+
+
+# ## Get best model
+
+# In[22]:
+
+
+# Get the best model scores of the training (it's a file)
+# change the experiment number
+get_ipython().system('cat experiments/3/bestScoresModelTraining.txt')
+
+
+# In[23]:
+
+
+# defining model
+model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim)
+
+# model = TheModelClass(*args, **kwargs)
+model.load_state_dict(torch.load(pathToSaveModel))
+
+model.cuda()
+
+
+# # Reconstruct light curves
+
+# In[24]:
+
+
+# set dataset to use
+loader = testLoader
+size = test_size
+
+# define arrays to store data
+reconstructedLightCurves = np.zeros(shape = (size, 2, 72 ))
+originalLightCurves = np.zeros(shape = (size, 4, 72 ))
+mask = np.zeros(shape = (size, 72))
+loss_values = np.zeros(shape = (size))
+
+# auxiliar variable
+lastIndex = -1
+
+
+# iterate through dataset (by minibatches)
+for i, data_ in enumerate(loader):
+
+    data = data_[0]
+    
+    # generate data deltas
+    data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
+    
+    # genreate output model
+    outputs, mu, logvar = model.forward(data)
+    
+    # get loss function value
+    loss_values[lastIndex + 1 : (lastIndex + outputs.shape[0] + 1)] = loss_function(outputs, data, mu, logvar, data_[0][:, passband, 3, :]).detach().cpu()
+    
+    # save orignial light curve
+    originalLightCurves[lastIndex + 1 : (lastIndex + outputs.shape[0] + 1), :, : ] = data_[0][:, passband, :, :]
+    mask[lastIndex + 1 : (lastIndex + outputs.shape[0] + 1),] = data_[0][:, passband, 3, :]
+
+    # array to store data
+    reconstructedLightCurve = np.zeros(shape = data_[0][:, passband, 0:2, :].shape)
+    
+    
+    ######## convert from delta to original format ########
+    
+    
+    
+    # adding first element (index 0)
+    # adding time with index 0
+    reconstructedLightCurve[:, 0, 0] = data_[0][:, passband, 0, 0]
+    
+    
+    # adding flux with index 0
+    reconstructedLightCurve[:, 1, 0] = data_[0][:, passband, 1, 0]
+    
+    
+    
+    # converting from 1 to end of the light curve
+    for i_lightCurve in range(1, data_[0].shape[3]):
+        
+        
+        # add time and flux 
+        reconstructedLightCurve[:, :, i_lightCurve] = reconstructedLightCurve[:, :, i_lightCurve-1] + outputs[:, :, i_lightCurve-1].cpu().detach().numpy()
+        
+    # add lightcurves from batch to array
+    reconstructedLightCurves[lastIndex + 1 : (lastIndex + outputs.shape[0] + 1), :, : ] = reconstructedLightCurve
+
+    # update auxiliar variable
+    lastIndex = i*outputs.shape[0] + outputs.shape[0] - 1
+
+
+# # Ordering by loss values
+
+# In[25]:
+
+
+# sorted array by loss value
+# ascendent order
+loss_values_sorted = np.argsort(loss_values)
+
+
+# In[26]:
+
+
+from scipy import stats
+
+# loss value stats
+print(stats.describe(loss_values))
+
+print("std deviation: " + str(np.std(loss_values)))
+
+
+# In[27]:
+
+
+# this is for checking errors
+print("Error with 0 value: " + str(np.where(loss_values == 0)[0].shape[0]))
+
+
+# # Ploting curves
+
+# In[28]:
+
+
+# plot light curves
+n_lightCurves = 3
+
+# create random indexes
+# indexes = np.random.randint(test_size, size= n_lightCurves)
+
+# minimum error
+indexes = loss_values_sorted[: n_lightCurves]
+
+# # max error
+# indexes = loss_values_sorted[:n_lightCurves:-1]
+
+# create plot
+fig, ax = plt.subplots(n_lightCurves, 1, figsize = (5,n_lightCurves * 2), tight_layout = True)
+
+
+# plot light curves
+for i in range(n_lightCurves):
+    
+    index = indexes[i]
+    
+    # add original
+    ax[i].scatter(originalLightCurves[indexes[i], 0, mask[indexes[i]].astype(bool)], originalLightCurves[indexes[i], 1, mask[indexes[i]].astype(bool)], label = "original")
+ 
+    # reconstructed data
+    ax[i].scatter(reconstructedLightCurves[indexes[i], 0, mask[indexes[i]].astype(bool)], reconstructedLightCurves[indexes[i], 1, mask[indexes[i]].astype(bool)], label = "reconstructed")
+    
+    # add title
+    ax[i].set_title("Object id: " + str(indexes[i]) + "\nReconstruction error: " + str(round(loss_values[indexes[i]], 2) )  )
+
+
+# # Unfolding
 
 # In[ ]:
 
 
-# print("saving losses")
-# losses = np.asarray([train_loss, test_loss]).T
-# np.savetxt("experiments/1/training_losses.csv", losses, delimiter=",")
+# plot fold light curve
+def fold(time, period):
+    """
+    returns phase = time/period - floor(time/period)
+    """
+    return np.mod(time, period)/period
 
 
 # In[ ]:
 
 
-print("experiment has finished")
+# library to get the period of a light curve
+import P4J
+
+# plot light curves
+n_lightCurves = 3
+
+# create random indexes
+# indexes = np.random.randint(test_size, size= n_lightCurves)
+# minimum error
+indexes = loss_values_sorted[: n_lightCurves]
+
+# max error
+# indexes = loss_values_sorted[:n_lightCurves:-1]
+# print(indexes)
+
+# create plot
+fig, ax = plt.subplots(n_lightCurves, 1, figsize = (5,n_lightCurves * 2), tight_layout = True)
 
 
-# # Save model
+# plot light curves
+for i in range(n_lightCurves):
+    
+    index = indexes[i]
+    
+# #     # add original
+#     ax[i].scatter(originalLightCurves[indexes[i], 0, mask[indexes[i]].astype(bool)], originalLightCurves[indexes[i], 1, mask[indexes[i]].astype(bool)], label = "original")
+#     ax[i].scatter(reconstructedLightCurves[indexes[i], 0, mask[indexes[i]].astype(bool)], reconstructedLightCurves[indexes[i], 1, mask[indexes[i]].astype(bool)], label = "reconstructed")
+#     ax[i].set_title("Object id: " + str(indexes[i]) + "\nReconstruction error: " + str(round(loss_values[indexes[i]], 2) )  )
+
+
+
+    # get period of light curve
+    my_per = P4J.periodogram(method='MHAOV') 
+    
+    # mjd, mag, err = lc_data[6].T
+    mjd = originalLightCurves[index, 0, originalLightCurves[index, 3, :].astype(bool)]
+    mag = originalLightCurves[index, 1, originalLightCurves[index, 3, :].astype(bool)]
+    err = originalLightCurves[index, 2, originalLightCurves[index, 3, :].astype(bool)]
+    
+#     print(mag.shape)
+    
+    my_per.set_data(mjd, mag, err,h_KDE_P=0.2)
+    my_per.frequency_grid_evaluation(fmin=0.0, fmax=4.0, fresolution=1e-4)
+    my_per.finetune_best_frequencies(fresolution=1e-5, n_local_optima=10)
+    freq, per = my_per.get_periodogram()
+    fbest, pbest  = my_per.get_best_frequencies()
+
+    # period
+    period = 1/fbest[0]
+
+#     fig_, ax_ = plt.subplots(figsize=(9, 4), tight_layout=True)
+    phi = fold(mjd, period)
+    
+    phi_ = fold(reconstructedLightCurves[indexes[i], 0, mask[indexes[i]].astype(bool)], period)
+    
+#     print(phi.shape)
+#     ax_.errorbar(np.hstack((phi, phi+1)), 
+#                 np.hstack((mag, mag)), 
+#                 np.hstack((err, err)), fmt='o')
+    
+    # add original
+    ax[i].scatter(phi, originalLightCurves[indexes[i], 1, mask[indexes[i]].astype(bool)], label = "original")
+    ax[i].scatter(phi_, reconstructedLightCurves[indexes[i], 1, mask[indexes[i]].astype(bool)], label = "reconstructed")
+#     ax[i].scatter(phi, reconstructedLightCurves[indexes[i], 1, mask[indexes[i]].astype(bool)], label = "reconstructed")
+    ax[i].set_title("Object id: " + str(indexes[i]) + "\nReconstruction error: " + str(round(loss_values[indexes[i]], 2) ) + "\n period: " + str(round(period, 2))  )
+    
+    if i == 0:
+        
+        fig.legend()
+        
+
+
+# ## Get latent variables
 
 # In[ ]:
 
 
-# pathToSaveModel = "/home/leo/Desktop/thesis/work/thesis/models/model"
-# pathToSaveModel = "/home/lbravo/thesis/work/thesis/models/model_guanaco_1"
-# add guanaco path
+# # training
+# latent_variables_train = np.zeros(shape = (train_size, latentDim))
+# labels_train = np.zeros(shape = (train_size))
 
-# modelName = "model"
+# # print(latent_variables_train.shape)
 
-# torch.save(model.state_dict(), pathToSaveModel)
+# # testing
+# latent_variables_test = np.zeros(shape = (test_size, latentDim))
+# labels_test = np.zeros(shape = (test_size))
 
+# # counter
+# last_index = -1
 
-# # Load model
+# for i, data_ in enumerate(trainLoader):
+
+#     data = data_[0]
+    
+#     data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
+
+#     outputs = model.get_latent_variables(data)
+    
+#     latent_variables_train[last_index + 1 : (last_index + outputs.shape[0] + 1), :] = outputs[:, 0, :].cpu().detach().numpy()
+#     labels_train[last_index + 1 : (last_index + outputs.shape[0] + 1)] = data_[1].numpy()[:,]
+    
+#     # updateing counter
+#     last_index = i*outputs.shape[0] + outputs.shape[0] - 1
+
+    
+# # counter
+# last_index = -1
+    
+# for i, data_ in enumerate(testLoader):
+    
+#     data = data_[0]
+    
+#     data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
+
+#     outputs = model.get_latent_variables(data)
+    
+#     latent_variables_test[last_index + 1 : (last_index + outputs.shape[0] + 1), :] = outputs[:, 0, :].cpu().detach().numpy()
+#     labels_test[last_index + 1 : (last_index + outputs.shape[0] + 1)] = data_[1].numpy()[:,]
+        
+#     # updating counter
+#     last_index = i*outputs.shape[0] + outputs.shape[0] - 1
+
 
 # In[ ]:
 
 
-# # model path
-# # pathToSaveModel = "/home/leo/Desktop/thesis/work/thesis/models/model"
-# pathToSaveModel = "/home/lbravo/thesis/work/thesis/models/model_guanaco_1"
+# # Analyze labels
+# fig, ax = plt.subplots(1, 2)
+# ax[0].set_title("training")
+# ax[0].hist(labels_train)
+# ax[1].hist(labels_test)
+# ax[1].set_title("testing")
 
 
-# In[ ]:
-
-
-# # check number of parameters
-# latentDim = 5
-# hiddenDim = 10
-# inputDim = 72
-
-# # defining model
-# model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim)
-
-# # model = TheModelClass(*args, **kwargs)
-# model.load_state_dict(torch.load(pathToSaveModel))
-
-
-# # Check reconstructed light curve
+# ## train model
 
 # In[ ]:
 
 
-# # reconstruction
-# print(len(list(trainLoader)))
-
-# lID = 0
-
-# reconstructedLightCurve = model.forward(generateDeltas(list(trainLoader)[lID][0], 0))
-
-# # print(reconstructedLightCurve.shape)
-# # print(list(testLoader)[0][0].shape)
-# # # display(reconstructedLightCurve.detach().numpy()[0].shape)
-# # print(list(testLoader)[0][0][0, 1, :].shape)
-
-# fig, ax = plt.subplots()
-
-# ax.plot(reconstructedLightCurve.detach().numpy()[0, 1, :], label = "reconstructed", color = "red")
-
-# # ax.plot(list(trainLoader)[lID][0][0, 1, :].detach().numpy(), label = "original", color = "green")
-
-# plt.legend()
+# from sklearn.ensemble import RandomForestClassifier
 
 
-# ### <font color='red'>Things to do:</font>
-# - Define metrics for evaluate models
+# # define model
+# classifier = RandomForestClassifier()
+
+# # train model
+# classifier.fit(latent_variables_train, labels_train)
+
+
+# ## get metrics
+
+# In[ ]:
+
+
+# from sklearn.metrics import f1_score
+# from sklearn.metrics import accuracy_score
+
+# # get f1 score
+# print("F1 score: ", f1_score(labels_test, classifier.predict(latent_variables_test), average='macro'))
+
+# # get accuracy
+# print("Accuracy: ", accuracy_score(labels_test, classifier.predict(latent_variables_test)))
+
