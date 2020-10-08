@@ -1,2 +1,0 @@
-Epoch: 551
- Reconstruction test error: 207572840431.54688
