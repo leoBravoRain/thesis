@@ -5,20 +5,23 @@
 
 # # Parameters to experiment
 
-# In[26]:
+# In[48]:
 
 
 # training on guanaco
 trainingOnGuanaco = True
 
+# train without notebook
+trainWithJustPython = False
+
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 1
+number_experiment = 2
 number_experiment = str(number_experiment)
 
 
-# In[27]:
+# In[36]:
 
 
 # classes to analyze
@@ -34,8 +37,9 @@ only_these_labels = [16]
 
 # VAE parameters
 latentDim = 100
-hiddenDim = 100
+hiddenDim = 1000
 inputDim = 72
+
 # training
 epochs = 1000
 
@@ -46,7 +50,7 @@ passband = 5
 batch_training_size = 128
 
 
-# In[28]:
+# In[37]:
 
 
 # training params
@@ -55,7 +59,7 @@ learning_rate = 1e-3
 
 # # Import libraries
 
-# In[36]:
+# In[38]:
 
 
 import pandas as pd
@@ -80,7 +84,7 @@ import math
 
 # # Load data
 
-# In[30]:
+# In[39]:
 
 
 # define path to dataset
@@ -89,7 +93,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[31]:
+# In[40]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -101,7 +105,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Ploting one light curve
 
-# In[32]:
+# In[41]:
 
 
 # lc_data, lc_label, lc_plasticc_id = torch_dataset_lazy.__getitem__(123)
@@ -113,7 +117,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 # print(lc_data.detach().numpy()[0, 0, :])
 
 
-# In[33]:
+# In[42]:
 
 
 # plot_light_curve(torch_dataset_lazy, index_in_dataset=1234)
@@ -121,7 +125,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[34]:
+# In[43]:
 
 
 # Spliting the data
@@ -151,7 +155,7 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[35]:
+# In[44]:
 
 
 # # Create data loader (minibatches)
@@ -169,7 +173,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 
 # ## Load the path to save model while training
 
-# In[11]:
+# In[45]:
 
 
 import os
@@ -196,14 +200,15 @@ else:
 pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# In[12]:
+# In[47]:
 
 
 # store varibales on file
 text_file = open("experiments/" + number_experiment + "/experimentParameters.txt", "w")
-text = "N° experiment: {7}\n Classes: {0}\n Latent dimension: {1}\n Hidden dimension: {2}\n Input dimension: {3}\n Passband: {4}\n Learning rate: {5}\n Batch training size: {6}".format(only_these_labels, latentDim, hiddenDim, inputDim, passband, learning_rate, batch_training_size, number_experiment)
+text = "N° experiment: {7}\n Classes: {0}\n train_size: {9}\n validation_size: {10}\n test_size: {11}\n total dataset size: {12}\n Epochs: {8}\n Latent dimension: {1}\n Hidden dimension: {2}\n Input dimension: {3}\n Passband: {4}\n Learning rate: {5}\n Batch training size: {6}".format(only_these_labels, latentDim, hiddenDim, inputDim, passband, learning_rate, batch_training_size, number_experiment, epochs, train_size, validation_size, test_size, train_size + validation_size + test_size)
 text_file.write(text)
 text_file.close()
+print("experiment parameters file created")
 
 
 # # Save dataset description
@@ -229,9 +234,8 @@ text_file.close()
 
 
 # ## Define autoencoder structure
-# To start with the work, It is going to build a very basic Autoencoder
 
-# In[14]:
+# In[12]:
 
 
 # Buiding autoencoder
@@ -497,7 +501,7 @@ passband = passband
 model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim)
 
 
-# In[16]:
+# In[30]:
 
 
 # # print("input dimension: {0}".format(len(list(trainLoader))))
@@ -518,7 +522,7 @@ model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = 
 # print("number of parameters: " + str(count))
 
 
-# In[17]:
+# In[13]:
 
 
 # it builds a mask for the deltas. It compares the next with the previous one element.
@@ -534,7 +538,7 @@ def generate_delta_mask(mask):
     return mask_delta
 
 
-# In[18]:
+# In[14]:
 
 
 from torch.nn import functional as F
@@ -568,7 +572,7 @@ def loss_function(recon_x, x, mu, logvar, mask):
     return BCE + KLD
 
 
-# In[19]:
+# In[15]:
 
 
 # normalize light curve
@@ -593,7 +597,7 @@ def normalizeLightCurve(data):
     return data
 
 
-# In[20]:
+# In[16]:
 
 
 # function to generate delta time and flux
@@ -626,7 +630,7 @@ def generateDeltas(data, passBand):
 
 # ### Training
 
-# In[20]:
+# In[17]:
 
 
 # optimizer
@@ -651,7 +655,7 @@ minTestLossGlobalSoFar = float("inf")
 
 # # # loss plot
 # if it is not cluster
-if not trainingOnGuanaco:
+if (not trainingOnGuanaco) or (not trainWithJustPython):
     
     fig, ax = plt.subplots(figsize = (3, 3), tight_layout = True)
     # # fig, ax = plt.subplots()
@@ -753,7 +757,7 @@ for nepoch in range(epochs):
 
     # plot loss values
     # if it's not cluster
-    if not trainingOnGuanaco:
+    if (not trainingOnGuanaco) or (not trainWithJustPython):
 
         ax.plot(train_loss[0: nepoch], label = "train", linewidth = 3, c = "red") 
         ax.plot(test_loss[0: nepoch], label = "test", linestyle = "--", linewidth = 3, c = "green") 
@@ -827,14 +831,15 @@ print("training has finished")
 
 
 import sys
-if  trainingOnGuanaco:
-    
-    sys.exit("Exit from code, because we are in cluster. Training has finished.")
+
+if  trainingOnGuanaco or trainWithJustPython:
+
+    sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
 
 
 # # Analyzing training
 
-# In[21]:
+# In[26]:
 
 
 # load losses array
@@ -849,21 +854,21 @@ ax.set_ylabel("Loss")
 
 # plot
 ax.plot(losses.iloc[:, 0], label = "train")
-ax.plot(losses.iloc[:, 1], label = "test")
+ax.plot(losses.iloc[:, 1], label = "validation")
 ax.legend()
 
 
 # ## Get best model
 
-# In[22]:
+# In[19]:
 
 
 # Get the best model scores of the training (it's a file)
 # change the experiment number
-get_ipython().system('cat experiments/3/bestScoresModelTraining.txt')
+get_ipython().system('cat experiments/1/bestScoresModelTraining.txt')
 
 
-# In[23]:
+# In[27]:
 
 
 # defining model
@@ -877,7 +882,7 @@ model.cuda()
 
 # # Reconstruct light curves
 
-# In[24]:
+# In[21]:
 
 
 # set dataset to use
@@ -946,7 +951,7 @@ for i, data_ in enumerate(loader):
 
 # # Ordering by loss values
 
-# In[25]:
+# In[22]:
 
 
 # sorted array by loss value
@@ -954,7 +959,7 @@ for i, data_ in enumerate(loader):
 loss_values_sorted = np.argsort(loss_values)
 
 
-# In[26]:
+# In[23]:
 
 
 from scipy import stats
@@ -965,7 +970,7 @@ print(stats.describe(loss_values))
 print("std deviation: " + str(np.std(loss_values)))
 
 
-# In[27]:
+# In[24]:
 
 
 # this is for checking errors
@@ -974,7 +979,7 @@ print("Error with 0 value: " + str(np.where(loss_values == 0)[0].shape[0]))
 
 # # Ploting curves
 
-# In[28]:
+# In[25]:
 
 
 # plot light curves
@@ -1010,7 +1015,7 @@ for i in range(n_lightCurves):
 
 # # Unfolding
 
-# In[ ]:
+# In[31]:
 
 
 # plot fold light curve
@@ -1021,7 +1026,7 @@ def fold(time, period):
     return np.mod(time, period)/period
 
 
-# In[ ]:
+# In[32]:
 
 
 # library to get the period of a light curve
@@ -1098,7 +1103,7 @@ for i in range(n_lightCurves):
 
 # ## Get latent variables
 
-# In[ ]:
+# In[33]:
 
 
 # # training
@@ -1147,7 +1152,7 @@ for i in range(n_lightCurves):
 #     last_index = i*outputs.shape[0] + outputs.shape[0] - 1
 
 
-# In[ ]:
+# In[34]:
 
 
 # # Analyze labels
@@ -1160,7 +1165,7 @@ for i in range(n_lightCurves):
 
 # ## train model
 
-# In[ ]:
+# In[35]:
 
 
 # from sklearn.ensemble import RandomForestClassifier
@@ -1175,7 +1180,7 @@ for i in range(n_lightCurves):
 
 # ## get metrics
 
-# In[ ]:
+# In[36]:
 
 
 # from sklearn.metrics import f1_score
