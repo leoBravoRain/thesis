@@ -3,11 +3,11 @@
 
 # # Parameters to experiment
 
-# In[27]:
+# In[22]:
 
 
 # training on guanaco
-# if it is going to run on guanaco, so comment the %matplotlib magic in next block
+# ATENTION: if it is going to run on guanaco, so comment the %matplotlib magic in next block
 trainingOnGuanaco = True
 
 # train without notebook
@@ -16,11 +16,11 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 3
+number_experiment = 4
 number_experiment = str(number_experiment)
 
 
-# In[3]:
+# In[2]:
 
 
 # classes to analyze
@@ -36,7 +36,7 @@ only_these_labels = [16]
 
 # VAE parameters
 latentDim = 100
-hiddenDim = 1000
+hiddenDim = 100
 inputDim = 72
 
 # training
@@ -49,7 +49,7 @@ passband = 5
 batch_training_size = 128
 
 
-# In[4]:
+# In[3]:
 
 
 # training params
@@ -58,7 +58,7 @@ learning_rate = 1e-3
 
 # # Import libraries
 
-# In[28]:
+# In[4]:
 
 
 import pandas as pd
@@ -83,7 +83,7 @@ import math
 
 # # Load data
 
-# In[6]:
+# In[5]:
 
 
 # define path to dataset
@@ -92,7 +92,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[7]:
+# In[6]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -104,7 +104,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Ploting one light curve
 
-# In[8]:
+# In[7]:
 
 
 # lc_data, lc_label, lc_plasticc_id = torch_dataset_lazy.__getitem__(123)
@@ -116,7 +116,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 # print(lc_data.detach().numpy()[0, 0, :])
 
 
-# In[9]:
+# In[8]:
 
 
 # plot_light_curve(torch_dataset_lazy, index_in_dataset=1234)
@@ -124,7 +124,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[10]:
+# In[9]:
 
 
 # Spliting the data
@@ -154,7 +154,7 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[11]:
+# In[10]:
 
 
 # # Create data loader (minibatches)
@@ -172,7 +172,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 
 # ## Load the path to save model while training
 
-# In[12]:
+# In[11]:
 
 
 import os
@@ -199,7 +199,7 @@ else:
 pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# In[13]:
+# In[12]:
 
 
 # store varibales on file
@@ -212,7 +212,7 @@ print("experiment parameters file created")
 
 # # Save dataset description
 
-# In[14]:
+# In[13]:
 
 
 # # check data loader shape
@@ -234,7 +234,7 @@ print("experiment parameters file created")
 
 # ## Define autoencoder structure
 
-# In[17]:
+# In[14]:
 
 
 # Buiding autoencoder
@@ -262,7 +262,8 @@ class Encoder(torch.nn.Module):
         
         # linear layer
 #         self.hidden1 = torch.nn.Linear(2144*2, hidden_dim)
-        self.hidden1 = torch.nn.Linear(1088, hidden_dim)
+#         self.hidden1 = torch.nn.Linear(1088, hidden_dim)
+        self.hidden1 = torch.nn.Linear(1632, hidden_dim)
         
 #         self.hidden2 = torch.nn.Linear(hidden_dim, hidden_dim)
         
@@ -302,6 +303,9 @@ class Encoder(torch.nn.Module):
 #         outputMagConv = self.activationConv(self.conv1Mag(x[:, 1, :].unsqueeze(1)))
         outputMagConv = self.activationConv(self.conv1(x[:, 1, :].unsqueeze(1)))
         
+        # conv to mag error
+        outputMagErrorConv = self.activationConv(self.conv1(x[:, 2, :].unsqueeze(1)))
+        
 #         print("output conv1 shape: {0}".format(outputMagConv.shape))
 #         print("output conv1 shape: {0}".format(outputTimeConv.shape))
         
@@ -314,19 +318,26 @@ class Encoder(torch.nn.Module):
         # conv to flux
         outputMagConv = self.activationConv(self.conv2(outputMagConv))
         
+        # conv to mag error
+        outputMagErrorConv = self.activationConv(self.conv2(outputMagErrorConv))
+        
 #         print("output conv2 shape: {0}".format(outputTimeConv.shape))
 #         print("output conv2 shape: {0}".format(outputMagConv.shape))
         
         # flatten ouput
         # shape should be: [batch_size, -1]
         outputMagConv = outputMagConv.view(outputMagConv.shape[0], -1)
+        
         outputTimeConv = outputTimeConv.view(outputTimeConv.shape[0], -1)
+        
+        outputMagErrorConv = outputMagErrorConv.view(outputMagErrorConv.shape[0], -1)
         
 #         print("output reshape: ", outputMagConv.shape)
 #         print("output reshape: ", outputTimeConv.shape)
                 
         # concatenate 2 towers
-        output = torch.cat((outputMagConv, outputTimeConv), 1)
+#         output = torch.cat((outputMagConv, outputTimeConv), 1)
+        output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv), 1)
 #         print("concatenate output shape: ", output.shape)
         
         # x -> hidden1 -> activation
@@ -497,7 +508,7 @@ class AutoEncoder(torch.nn.Module):
 
 # ## Defining parameters to Autoencoder
 
-# In[18]:
+# In[15]:
 
 
 # check number of parameters
@@ -515,7 +526,7 @@ passband = passband
 model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim)
 
 
-# In[19]:
+# In[16]:
 
 
 # # print("input dimension: {0}".format(len(list(trainLoader))))
@@ -536,7 +547,7 @@ model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = 
 # print("number of parameters: " + str(count))
 
 
-# In[20]:
+# In[17]:
 
 
 # it builds a mask for the deltas. It compares the next with the previous one element.
@@ -552,7 +563,7 @@ def generate_delta_mask(mask):
     return mask_delta
 
 
-# In[21]:
+# In[18]:
 
 
 from torch.nn import functional as F
@@ -586,32 +597,32 @@ def loss_function(recon_x, x, mu, logvar, mask):
     return BCE + KLD
 
 
-# In[22]:
+# In[19]:
 
 
-# normalize light curve
-# data: [batch size, 2 channels (time and magnitude), light curve length]
-def normalizeLightCurve(data):
+# # normalize light curve
+# # data: [batch size, 2 channels (time and magnitude), light curve length]
+# def normalizeLightCurve(data):
     
-#     print("data shape before normalization: ", data.shape)
+# #     print("data shape before normalization: ", data.shape)
     
-    # get flux mean
-    means = data[:, 1, :].mean(dim=1)
-#     print("mean shape: ", means.shape)
+#     # get flux mean
+#     means = data[:, 1, :].mean(dim=1)
+# #     print("mean shape: ", means.shape)
     
-    # get flux standar deviation 
-    stds = data[:, 1, :].std(dim=1)
-#     print("stds shape: ", stds.shape)
+#     # get flux standar deviation 
+#     stds = data[:, 1, :].std(dim=1)
+# #     print("stds shape: ", stds.shape)
     
-    # overwrite flux
-    data[:, 1, :] = (data[:, 1, :] - means.unsqueeze(1).expand_as(data[:, 1, :])) / stds.unsqueeze(1).expand_as(data[:, 1, :])
-#     print("normalized data shape: ", data.shape)
+#     # overwrite flux
+#     data[:, 1, :] = (data[:, 1, :] - means.unsqueeze(1).expand_as(data[:, 1, :])) / stds.unsqueeze(1).expand_as(data[:, 1, :])
+# #     print("normalized data shape: ", data.shape)
     
-    # return normalized data
-    return data
+#     # return normalized data
+#     return data
 
 
-# In[23]:
+# In[20]:
 
 
 # function to generate delta time and flux
@@ -630,8 +641,12 @@ def generateDeltas(data, passBand):
     tmpDeltaMagnitude = data[:, passBand, 1, 1:] - data[:, passBand, 1, :-1]
 #     print("generate deltas flux shape: {0}".format(tmpDeltaMagnitude.shape))
     
+    # delta errors
+    tmpDeltaMagError = data[:, passBand, 2, 1:] - data[:, passBand, 2, :-1]
+    
     # concatenate tensors
-    dataToUse = torch.cat((tmpDeltaTime.unsqueeze(1), tmpDeltaMagnitude.unsqueeze(1)), 1)
+#     dataToUse = torch.cat((tmpDeltaTime.unsqueeze(1), tmpDeltaMagnitude.unsqueeze(1)), 1)
+    dataToUse = torch.cat((tmpDeltaTime.unsqueeze(1), tmpDeltaMagnitude.unsqueeze(1), tmpDeltaMagError.unsqueeze(1)), 1)
 #     print("data to use shape: {0}".format(dataToUse.shape))
     
     # normalize data
@@ -644,7 +659,7 @@ def generateDeltas(data, passBand):
 
 # ### Training
 
-# In[25]:
+# In[21]:
 
 
 # optimizer
@@ -733,7 +748,8 @@ for nepoch in range(epochs):
         
         # use KLD + MSE
         # output model, original data (deltas), mu, logvar, mask
-        loss = loss_function(outputs, data, mu, logvar, data_[0][:, passband, 3, :])
+#         loss = loss_function(outputs, data, mu, logvar, data_[0][:, passband, 3, :])
+        loss = loss_function(outputs, data[:, 0:2, :], mu, logvar, data_[0][:, passband, 3, :])
         
         # backpropagation
         loss.backward()
@@ -770,8 +786,9 @@ for nepoch in range(epochs):
             outputs, mu, logvar = model.forward(data)
         
         # get minibatch loss value
-        loss = loss_function(outputs, data, mu, logvar, data_[0][:, passband, 3, :])
-        
+#         loss = loss_function(outputs, data, mu, logvar, data_[0][:, passband, 3, :])
+        loss = loss_function(outputs, data[:, 0:2, :], mu, logvar, data_[0][:, passband, 3, :])
+    
         #  store minibatch loss value
         epoch_test_loss += loss.item()
     
@@ -850,7 +867,7 @@ print("training has finished")
 
 # ### Stop execution if it's on cluster
 
-# In[26]:
+# In[ ]:
 
 
 import sys
@@ -862,7 +879,7 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[26]:
+# In[31]:
 
 
 # load losses array
@@ -883,15 +900,15 @@ ax.legend()
 
 # ## Get best model
 
-# In[19]:
+# In[32]:
 
 
 # Get the best model scores of the training (it's a file)
 # change the experiment number
-get_ipython().system('cat experiments/1/bestScoresModelTraining.txt')
+get_ipython().system('cat experiments/3/bestScoresModelTraining.txt')
 
 
-# In[27]:
+# In[33]:
 
 
 # defining model
@@ -905,7 +922,7 @@ model.cuda()
 
 # # Reconstruct light curves
 
-# In[21]:
+# In[35]:
 
 
 # set dataset to use
@@ -934,7 +951,8 @@ for i, data_ in enumerate(loader):
     outputs, mu, logvar = model.forward(data)
     
     # get loss function value
-    loss_values[lastIndex + 1 : (lastIndex + outputs.shape[0] + 1)] = loss_function(outputs, data, mu, logvar, data_[0][:, passband, 3, :]).detach().cpu()
+#     loss_values[lastIndex + 1 : (lastIndex + outputs.shape[0] + 1)] = loss_function(outputs, data, mu, logvar, data_[0][:, passband, 3, :]).detach().cpu()
+    loss_values[lastIndex + 1 : (lastIndex + outputs.shape[0] + 1)] = loss_function(outputs, data[:, 0:2, :], mu, logvar, data_[0][:, passband, 3, :]).detach().cpu()
     
     # save orignial light curve
     originalLightCurves[lastIndex + 1 : (lastIndex + outputs.shape[0] + 1), :, : ] = data_[0][:, passband, :, :]
@@ -974,7 +992,7 @@ for i, data_ in enumerate(loader):
 
 # # Ordering by loss values
 
-# In[22]:
+# In[36]:
 
 
 # sorted array by loss value
@@ -982,7 +1000,7 @@ for i, data_ in enumerate(loader):
 loss_values_sorted = np.argsort(loss_values)
 
 
-# In[23]:
+# In[37]:
 
 
 from scipy import stats
@@ -993,7 +1011,7 @@ print(stats.describe(loss_values))
 print("std deviation: " + str(np.std(loss_values)))
 
 
-# In[24]:
+# In[38]:
 
 
 # this is for checking errors
@@ -1002,7 +1020,7 @@ print("Error with 0 value: " + str(np.where(loss_values == 0)[0].shape[0]))
 
 # # Ploting curves
 
-# In[25]:
+# In[39]:
 
 
 # plot light curves
@@ -1038,7 +1056,7 @@ for i in range(n_lightCurves):
 
 # # Unfolding
 
-# In[31]:
+# In[40]:
 
 
 # plot fold light curve
@@ -1049,7 +1067,7 @@ def fold(time, period):
     return np.mod(time, period)/period
 
 
-# In[32]:
+# In[41]:
 
 
 # library to get the period of a light curve
