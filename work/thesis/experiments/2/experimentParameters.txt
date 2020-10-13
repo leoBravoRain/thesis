@@ -1,0 +1,13 @@
+N° experiment: 2
+ Classes: [16]
+ train_size: 77996
+ validation_size: 9750
+ test_size: 9750
+ total dataset size: 97496
+ Epochs: 1000
+ Latent dimension: 100
+ Hidden dimension: 1000
+ Input dimension: 72
+ Passband: 5
+ Learning rate: 0.001
+ Batch training size: 128
