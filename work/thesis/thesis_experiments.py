@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # MAKE A COPY BEFORE PULLING RESULTS FROM GUANACO
-
 # # Parameters to experiment
 
-# In[48]:
+# In[27]:
 
 
 # training on guanaco
+# if it is going to run on guanaco, so comment the %matplotlib magic in next block
 trainingOnGuanaco = True
 
 # train without notebook
@@ -17,11 +16,11 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 2
+number_experiment = 3
 number_experiment = str(number_experiment)
 
 
-# In[36]:
+# In[3]:
 
 
 # classes to analyze
@@ -50,7 +49,7 @@ passband = 5
 batch_training_size = 128
 
 
-# In[37]:
+# In[4]:
 
 
 # training params
@@ -59,7 +58,7 @@ learning_rate = 1e-3
 
 # # Import libraries
 
-# In[38]:
+# In[28]:
 
 
 import pandas as pd
@@ -84,7 +83,7 @@ import math
 
 # # Load data
 
-# In[39]:
+# In[6]:
 
 
 # define path to dataset
@@ -93,7 +92,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[40]:
+# In[7]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -105,7 +104,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Ploting one light curve
 
-# In[41]:
+# In[8]:
 
 
 # lc_data, lc_label, lc_plasticc_id = torch_dataset_lazy.__getitem__(123)
@@ -117,7 +116,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 # print(lc_data.detach().numpy()[0, 0, :])
 
 
-# In[42]:
+# In[9]:
 
 
 # plot_light_curve(torch_dataset_lazy, index_in_dataset=1234)
@@ -125,7 +124,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[43]:
+# In[10]:
 
 
 # Spliting the data
@@ -155,7 +154,7 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[44]:
+# In[11]:
 
 
 # # Create data loader (minibatches)
@@ -173,7 +172,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 
 # ## Load the path to save model while training
 
-# In[45]:
+# In[12]:
 
 
 import os
@@ -200,7 +199,7 @@ else:
 pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# In[47]:
+# In[13]:
 
 
 # store varibales on file
@@ -213,7 +212,7 @@ print("experiment parameters file created")
 
 # # Save dataset description
 
-# In[13]:
+# In[14]:
 
 
 # # check data loader shape
@@ -235,7 +234,7 @@ print("experiment parameters file created")
 
 # ## Define autoencoder structure
 
-# In[12]:
+# In[17]:
 
 
 # Buiding autoencoder
@@ -274,18 +273,22 @@ class Encoder(torch.nn.Module):
         self.logVar = torch.nn.Linear(hidden_dim, latent_dim)
         
         # activation function
-#         self.activationConv = torch.nn.ReLU() #max(0, x)
-        self.activationConv = torch.nn.Tanh() #max(0, x)
+        self.activationConv = torch.nn.ReLU() #max(0, x)
+#         self.activationConv = torch.nn.Tanh()
     
-#         self.activationLinear = torch.nn.Tanh()
-        self.activationLinear = torch.nn.ReLU()
+        # this works well.(comparing with relu)
+        self.activationLinear = torch.nn.Tanh()
+
+        # this is getting nan values
+#         self.activationLinear = torch.nn.ReLU()
 
     # forward method
     def forward(self, x):
         
         # input shape: [batch_size, channels, sequence_length]
         # print("input shape: {0}".format(x.shape))
-        
+#         print("input to encoder: ")
+#         print(x)
         
         # convolution 1
         # x -> conv -> act -> ouput
@@ -329,6 +332,8 @@ class Encoder(torch.nn.Module):
         # x -> hidden1 -> activation
 #         print("before linear layer: {0}".format(output.shape))
         output = self.activationLinear(self.hidden1(output))
+        # Should be an activiation function here?
+#         output = (self.hidden1(output))
         
 #         second hidden layer
 #         output = self.activationLinear(self.hidden2(output))
@@ -336,6 +341,9 @@ class Encoder(torch.nn.Module):
     
 #         output = self.hidden1(output)
 #         print("hidden1 output shape: {0}".format(output.shape))
+        
+#         print("hidden 1 encoder output:")
+#         print(output)
         
         # get mu
         # sin tangenteh!!!
@@ -345,6 +353,12 @@ class Encoder(torch.nn.Module):
         # get sigma
         logVar = self.logVar(output)
 #         print("sigma shape: {0}".format(logVar.shape))
+        
+#         print("mu from encoder: ")
+#         print(mu)
+        
+#         print("logvar from encoder: ")
+#         print(logVar)
         
         # returning values
         return mu, logVar
@@ -371,8 +385,8 @@ class Decoder(torch.nn.Module):
         self.activationConv = torch.nn.ReLU() #max(0, x)
 #         self.activationConv = torch.nn.Tanh() #max(0, x)
     
-        self.activationLinear = torch.nn.Tanh()
-#         self.activationLinear = torch.nn.ReLU()
+#         self.activationLinear = torch.nn.Tanh()
+        self.activationLinear = torch.nn.ReLU() #max(0, x)
         
     # forward method
     def forward(self, z):
@@ -483,7 +497,7 @@ class AutoEncoder(torch.nn.Module):
 
 # ## Defining parameters to Autoencoder
 
-# In[15]:
+# In[18]:
 
 
 # check number of parameters
@@ -501,7 +515,7 @@ passband = passband
 model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim)
 
 
-# In[30]:
+# In[19]:
 
 
 # # print("input dimension: {0}".format(len(list(trainLoader))))
@@ -522,7 +536,7 @@ model = AutoEncoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = 
 # print("number of parameters: " + str(count))
 
 
-# In[13]:
+# In[20]:
 
 
 # it builds a mask for the deltas. It compares the next with the previous one element.
@@ -538,7 +552,7 @@ def generate_delta_mask(mask):
     return mask_delta
 
 
-# In[14]:
+# In[21]:
 
 
 from torch.nn import functional as F
@@ -572,7 +586,7 @@ def loss_function(recon_x, x, mu, logvar, mask):
     return BCE + KLD
 
 
-# In[15]:
+# In[22]:
 
 
 # normalize light curve
@@ -597,7 +611,7 @@ def normalizeLightCurve(data):
     return data
 
 
-# In[16]:
+# In[23]:
 
 
 # function to generate delta time and flux
@@ -630,7 +644,7 @@ def generateDeltas(data, passBand):
 
 # ### Training
 
-# In[17]:
+# In[25]:
 
 
 # optimizer
@@ -705,7 +719,18 @@ for nepoch in range(epochs):
             data = generateDeltas(data, passband).type(torch.FloatTensor)
             outputs, mu, logvar = model.forward(data)
         
-    
+#         print("data")
+#         print(data)
+        
+#         print("outputs")
+#         print(outputs)
+        
+#         print("mu")
+#         print(mu)
+        
+#         print("logvar")
+#         print(logvar)
+        
         # use KLD + MSE
         # output model, original data (deltas), mu, logvar, mask
         loss = loss_function(outputs, data, mu, logvar, data_[0][:, passband, 3, :])
@@ -718,7 +743,8 @@ for nepoch in range(epochs):
         
         # add loss value (of the currrent minibatch)
         epoch_train_loss += loss.item()
-    
+        
+
     # get epoch loss value
     train_loss[nepoch] = epoch_train_loss / train_size
     
@@ -753,8 +779,6 @@ for nepoch in range(epochs):
     test_loss[nepoch] = epoch_test_loss / test_size
     
     
-    
-
     # plot loss values
     # if it's not cluster
     if (not trainingOnGuanaco) or (not trainWithJustPython):
@@ -762,7 +786,6 @@ for nepoch in range(epochs):
         ax.plot(train_loss[0: nepoch], label = "train", linewidth = 3, c = "red") 
         ax.plot(test_loss[0: nepoch], label = "test", linestyle = "--", linewidth = 3, c = "green") 
         fig.canvas.draw()
-    
     
     
     #### Early stopping #####
@@ -827,7 +850,7 @@ print("training has finished")
 
 # ### Stop execution if it's on cluster
 
-# In[37]:
+# In[26]:
 
 
 import sys
