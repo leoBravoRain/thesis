@@ -1,9 +1,9 @@
 N° experiment: 4
  Classes: [16]
- train_size: 77996
- validation_size: 9750
- test_size: 9750
- total dataset size: 97496
+ train_size: 8552
+ validation_size: 1069
+ test_size: 1070
+ total dataset size: 10691
  Epochs: 1000
  Latent dimension: 100
  Hidden dimension: 100
