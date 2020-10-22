@@ -5,7 +5,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[2]:
 
 
 # training on guanaco
@@ -25,7 +25,7 @@ number_experiment = str(number_experiment)
 comment = "training encoder as classifier"
 
 
-# In[2]:
+# In[3]:
 
 
 # classes to analyze
@@ -54,7 +54,7 @@ passband = 5
 batch_training_size = 128
 
 
-# In[3]:
+# In[4]:
 
 
 # training params
@@ -63,7 +63,7 @@ learning_rate = 1e-3
 
 # # Import libraries
 
-# In[4]:
+# In[5]:
 
 
 import pandas as pd
@@ -90,7 +90,7 @@ from torch import nn
 
 # # Load data
 
-# In[5]:
+# In[6]:
 
 
 # define path to dataset
@@ -99,7 +99,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[6]:
+# In[7]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -111,7 +111,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[7]:
+# In[8]:
 
 
 # Spliting the data
@@ -141,7 +141,7 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[8]:
+# In[9]:
 
 
 # # Create data loader (minibatches)
@@ -361,7 +361,7 @@ class Encoder(torch.nn.Module):
 
 # ## Defining parameters to Autoencoder
 
-# In[31]:
+# In[12]:
 
 
 # check number of parameters
@@ -385,13 +385,13 @@ model = Encoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inpu
 model.cuda()
 
 
-# In[32]:
+# In[13]:
 
 
 print(model)
 
 
-# In[19]:
+# In[14]:
 
 
 # it builds a mask for the deltas. It compares the next with the previous one element.
@@ -407,7 +407,7 @@ def generate_delta_mask(mask):
     return mask_delta
 
 
-# In[20]:
+# In[15]:
 
 
 # function to generate delta time and flux
@@ -444,7 +444,7 @@ def generateDeltas(data, passBand):
     return dataToUse
 
 
-# In[21]:
+# In[16]:
 
 
 # mapping the labels to classes 0 to C-1
@@ -458,20 +458,23 @@ def mapLabels(labels):
     return labels
 
 
-# In[22]:
+# In[17]:
 
+
+pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 # model = TheModelClass(*args, **kwargs)
 model.load_state_dict(torch.load(pathToSaveModel))
 
 
-# In[73]:
+# In[18]:
 
 
 # get y true and labels
 
 predictions = np.zeros(shape = (0,))
 labels_ = np.zeros(shape = (0,))
+counter = 0
 
 # minibatches
 for data_ in validationLoader:
@@ -490,8 +493,11 @@ for data_ in validationLoader:
     predictions = np.append(predictions, prediction)
     labels_ = np.append(labels_, label)
 
-
-# In[81]:
+    counter += 1
+    
+    print(counter)
+    
+# In[ ]:
 
 
 from sklearn.metrics import classification_report
