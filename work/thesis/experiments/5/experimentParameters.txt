@@ -1,0 +1,14 @@
+N° experiment: 5
+ General comment: training encoder as classifier
+ Classes: [16, 92, 53]
+ train_size: 237098
+ validation_size: 29637
+ test_size: 29638
+ total dataset size: 296373
+ Epochs: 2000
+ Latent dimension: 100
+ Hidden dimension: 100
+ Input dimension: 72
+ Passband: 5
+ Learning rate: 0.001
+ Batch training size: 128
