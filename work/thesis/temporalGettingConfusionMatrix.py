@@ -461,7 +461,7 @@ def mapLabels(labels):
 # In[17]:
 
 
-pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
+pathToSaveModel = "/home/lbravo/thesis/work/thesis/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 # model = TheModelClass(*args, **kwargs)
 model.load_state_dict(torch.load(pathToSaveModel))
@@ -474,7 +474,6 @@ model.load_state_dict(torch.load(pathToSaveModel))
 
 predictions = np.zeros(shape = (0,))
 labels_ = np.zeros(shape = (0,))
-counter = 0
 
 # minibatches
 for data_ in validationLoader:
@@ -493,10 +492,7 @@ for data_ in validationLoader:
     predictions = np.append(predictions, prediction)
     labels_ = np.append(labels_, label)
 
-    counter += 1
-    
-    print(counter)
-    
+
 # In[ ]:
 
 
