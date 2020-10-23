@@ -461,7 +461,7 @@ def mapLabels(labels):
 # In[17]:
 
 
-pathToSaveModel = "/home/lbravo/thesis/work/thesis/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
+pathToSaveModel = "/home/lbravo/thesis/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 # model = TheModelClass(*args, **kwargs)
 model.load_state_dict(torch.load(pathToSaveModel))
