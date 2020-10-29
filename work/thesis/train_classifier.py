@@ -51,7 +51,7 @@ hiddenDim = 100
 inputDim = 72
 
 # training
-epochs = 2
+epochs = 1000
 
 # band
 # passband = 5
