@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[2]:
 
 
 # training on guanaco
@@ -19,20 +19,25 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 5
+number_experiment = 6
 number_experiment = str(number_experiment)
 
 # add general comment about experiment 
-comment = "training encoder as classifier"
+comment = "encoder as clasifier with periodic + variable (without class balancing)"
 
 
-# In[2]:
+# In[3]:
 
 
 # classes to analyze
 # 42,  90,  16,  67,  62, 993,  92,  52,  88,  65, 991, 992,  15,
 #        95,   6,  53, 994,  64
-only_these_labels = [16, 92, 53]
+
+# periodic
+# only_these_labels = [16, 92, 53]
+
+# periodic + variable
+only_these_labels = [16, 92, 53, 88, 65, 6]
 # 53 has 24 light curves
 
 # only_these_labels = [16, 92]
@@ -46,7 +51,7 @@ hiddenDim = 100
 inputDim = 72
 
 # training
-epochs = 2000
+epochs = 2
 
 # band
 # passband = 5
@@ -55,7 +60,7 @@ passband = 5
 batch_training_size = 128
 
 
-# In[3]:
+# In[4]:
 
 
 # training params
@@ -64,7 +69,7 @@ learning_rate = 1e-3
 
 # # Import libraries
 
-# In[4]:
+# In[5]:
 
 
 import pandas as pd
@@ -91,7 +96,7 @@ from torch import nn
 
 # # Load data
 
-# In[5]:
+# In[6]:
 
 
 # define path to dataset
@@ -100,7 +105,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[6]:
+# In[7]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -112,7 +117,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Ploting one light curve
 
-# In[7]:
+# In[8]:
 
 
 # lc_data, lc_label, lc_plasticc_id = torch_dataset_lazy.__getitem__(123)
@@ -124,7 +129,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 # print(lc_data.detach().numpy()[0, 0, :])
 
 
-# In[8]:
+# In[9]:
 
 
 # plot_light_curve(torch_dataset_lazy, index_in_dataset=1234)
@@ -132,7 +137,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[9]:
+# In[10]:
 
 
 # Spliting the data
@@ -162,7 +167,7 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[10]:
+# In[11]:
 
 
 # # Create data loader (minibatches)
@@ -180,7 +185,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 
 # ## Load the path to save model while training
 
-# In[11]:
+# In[12]:
 
 
 import os
@@ -204,10 +209,10 @@ else:
     print("folder already exists")
 
 # define paht to save model while training
-pathToSaveModel = "/home/lbravo/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
+pathToSaveModel = "/home/lbravo/thesis/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# In[12]:
+# In[13]:
 
 
 # store varibales on file
@@ -220,7 +225,7 @@ print("experiment parameters file created")
 
 # ## Define autoencoder structure
 
-# In[13]:
+# In[14]:
 
 
 # implementacion adaptada a 1D de https://github.com/naoto0804/pytorch-inpainting-with-partial-conv
@@ -267,7 +272,7 @@ class PartialConv(nn.Module):
         return output, new_mask
 
 
-# In[14]:
+# In[15]:
 
 
 # building classifier
@@ -297,7 +302,6 @@ class Encoder(torch.nn.Module):
         
         # partial convolution
         self.pconv2 = PartialConv(in_channels_C = 64,in_channels_M = 64, out_channels = 32, kernel_size = 3, stride=2, padding=0, dilation=1, bias=True)
-        
         
         # linear layer
 #         self.hidden1 = torch.nn.Linear(2144*2, hidden_dim)
@@ -422,7 +426,7 @@ class Encoder(torch.nn.Module):
 
 # ## Defining parameters to Autoencoder
 
-# In[15]:
+# In[16]:
 
 
 # check number of parameters
@@ -446,13 +450,13 @@ model = Encoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inpu
 model = model.cuda()
 
 
-# In[16]:
+# In[17]:
 
 
 print(model)
 
 
-# In[17]:
+# In[18]:
 
 
 # # print("input dimension: {0}".format(len(list(trainLoader))))
@@ -473,7 +477,7 @@ print(model)
 # print("number of parameters: " + str(count))
 
 
-# In[18]:
+# In[19]:
 
 
 # it builds a mask for the deltas. It compares the next with the previous one element.
@@ -489,7 +493,7 @@ def generate_delta_mask(mask):
     return mask_delta
 
 
-# In[19]:
+# In[20]:
 
 
 # function to generate delta time and flux
@@ -526,7 +530,7 @@ def generateDeltas(data, passBand):
     return dataToUse
 
 
-# In[20]:
+# In[21]:
 
 
 # mapping the labels to classes 0 to C-1
@@ -540,9 +544,27 @@ def mapLabels(labels):
     return labels
 
 
+# In[22]:
+
+
+# test mapLabels function
+
+# input
+input_ = np.array([16, 92, 53, 16, 53])
+labels = np.array([0, 1, 2, 0, 2])
+
+# output
+output = mapLabels(input_)
+
+# # test
+assert np.array_equal(output,  labels) == True, "Should be 0, 1, 2"
+
+print("test ok")
+
+
 # ### Training
 
-# In[21]:
+# In[24]:
 
 
 from sklearn.metrics import f1_score
@@ -552,9 +574,6 @@ optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum = 0
 
 # loss function
 lossFunction = nn.CrossEntropyLoss()
-
-# number of epochs
-epochs = epochs
 
 # loss
 train_loss = np.zeros((epochs,))
@@ -639,7 +658,10 @@ for nepoch in range(epochs):
     ##### Validation ########
     
     epoch_test_loss = 0
+    
+    # check f1 score in each minibatch
     f1Score = 0
+    
     batchCounter = 0
     
     # minibatches
@@ -713,7 +735,7 @@ for nepoch in range(epochs):
     #### Saving best model ####
     
     # if epoch test loss is smaller than global min
-    if epoch_test_loss < minTestLossGlobalSoFar:
+    if (epoch_test_loss/validation_size) < minTestLossGlobalSoFar:
         
         print("New min test loss. Saving model")
 #         print("old: ", minTestLossGlobalSoFar)
@@ -747,9 +769,53 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
+# In[26]:
+
+
+# get y true and labels
+
+predictions = np.zeros(shape = (0,))
+labels_ = np.zeros(shape = (0,))
+
+# minibatches
+for data_ in validationLoader:
+        
+    data = data_[0].cuda()
+    labels = data_[1].cuda()
+
+    data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
+
+    outputs = model.forward(data)
+    
+    prediction = torch.argmax(outputs, 1).cpu().numpy()
+
+    label = mapLabels(labels).cpu().numpy()
+    
+    predictions = np.append(predictions, prediction)
+    labels_ = np.append(labels_, label)
+    
+
+# getting confusion amtrix
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+
+cm = confusion_matrix(labels_, predictions)
+
+print("saving confusion matrix scores")
+np.savetxt("experiments/" + number_experiment + "/confusionMatrix.csv", cm, delimiter=",")
+
+
+# classification report
+print("saving clasification report")
+text_file = open("experiments/" + number_experiment + "/clasificationReport.txt", "w")
+text = classification_report(labels_, predictions)
+text_file.write(text)
+text_file.close()
+
+
 # ### Stop execution if it's on cluster
 
-# In[22]:
+# In[27]:
 
 
 import sys
@@ -761,21 +827,55 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[26]:
+# In[ ]:
 
 
 # load losses array
 losses = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/"+ number_experiment + "/training_losses.csv")
 
+# f1 scores
+f1Scores = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/"+ number_experiment + "/f1Scores.csv")
+
 # plot losses
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
 
-# axis
-ax.set_xlabel("N° epoch")
-ax.set_ylabel("Loss")
+# loss
+ax[0].set_xlabel("N° epoch")
+ax[0].set_ylabel("Loss")
+ax[0].plot(losses.iloc[:, 0], label = "train")
+ax[0].plot(losses.iloc[:, 1], label = "validation")
+ax[0].scatter(429, 0.000845159766508081, c = "r", linewidths = 10)
+ax[0].legend()
 
-# plot
-ax.plot(losses.iloc[:, 0], label = "train")
-ax.plot(losses.iloc[:, 1], label = "validation")
-ax.legend()
+# f1 scores
+ax[1].set_xlabel("N° epoch")
+ax[1].set_ylabel("F1 score")
+ax[1].plot(f1Scores)
+ax[1].scatter(429, f1Scores.iloc[428], c = "r", linewidths = 10)
+
+
+# ax[0].scatter(429, 0)
+
+
+# Red point is the epoch with lower value in 
+
+# In[ ]:
+
+
+# confusion matrix
+import pandas as pd
+import seaborn as sn
+
+cm = pd.read_csv('./experiments/' + number_experiment + '/confusionMatrix.csv', header = None) 
+
+display(cm)
+
+sn.heatmap(cm, annot=True)
+
+
+# In[ ]:
+
+
+# classification report
+get_ipython().system('cat ./experiments/6/clasificationReport.txt')
 
