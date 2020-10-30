@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[2]:
+# In[1]:
 
 
 # training on guanaco
@@ -26,7 +26,7 @@ number_experiment = str(number_experiment)
 comment = "encoder as clasifier with periodic + variable (without class balancing)"
 
 
-# In[3]:
+# In[2]:
 
 
 # classes to analyze
@@ -51,7 +51,7 @@ hiddenDim = 100
 inputDim = 72
 
 # training
-epochs = 1000
+epochs = 3000
 
 # band
 # passband = 5
@@ -60,7 +60,7 @@ passband = 5
 batch_training_size = 128
 
 
-# In[4]:
+# In[3]:
 
 
 # training params
@@ -92,6 +92,8 @@ from plasticc_dataset_torch import get_plasticc_datasets
 import math
 
 from torch import nn
+
+# from torchsampler import ImbalancedDatasetSampler
 
 
 # # Load data
@@ -137,7 +139,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[10]:
+# In[11]:
 
 
 # Spliting the data
@@ -167,13 +169,93 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[11]:
+# In[12]:
+
+
+# # count classes in dataloader
+# # return array of counter of each class
+# def countClasses(dataLoader):
+    
+#     classCounter = np.zeros(shape = (len(only_these_labels),))
+    
+#     for data in dataLoader:
+        
+#         # count how many instance of class x
+#         for i in range(len(only_these_labels)):
+
+#             classCounter[i] += np.count_nonzero(data[1] == only_these_labels[i])
+            
+#     return classCounter
+
+
+# In[13]:
+
+
+# temp = countClasses(trainDataset)
+
+# fig, ax = plt.subplots()
+# ax.bar(x = only_these_labels, height = temp, width = 10)
+
+
+# In[14]:
+
+
+# print(np.sum(temp))
+
+
+# In[15]:
+
+
+# # get classes counter
+# samples_weights = 1 / countClasses(trainDataset)
+
+# assert len(samples_weights) == (len(only_these_labels)) 
+
+# # create sampler
+# sampler = torch.utils.data.sampler.WeightedRandomSampler(
+#     samples_weights, 
+#     num_samples = batch_training_size, 
+# #     replacement=True
+# )
+
+
+# In[16]:
+
+
+# print(temp)
+# print(samples_weights)
+# print(list(sampler))
+
+
+# In[17]:
 
 
 # # Create data loader (minibatches)
 
 # # train loader
 trainLoader = torch.utils.data.DataLoader(trainDataset, batch_size= batch_training_size, shuffle=True, num_workers = 4)
+
+# trainLoader = torch.utils.data.DataLoader(
+#     trainDataset, 
+#     batch_size= batch_training_size, 
+# #     shuffle=True, 
+#     num_workers = 4,
+# #     sampler = sampler
+# )
+
+
+# trainLoader = torch.utils.data.DataLoader(
+#     trainDataset, 
+#     batch_size= batch_training_size, 
+#     num_workers = 4, 
+# #     sampler=ImbalancedDatasetSampler(trainDataset),
+#     samples = ImbalancedDatasetSampler(
+#         dataset,
+#         indices=train_idx,
+#         callback_get_label= lambda dataset, idx:dataset[idx]['label'].item())
+# )
+
+# print("test ok")
 
 # validation loader
 validationLoader = torch.utils.data.DataLoader(validationDataset, batch_size= batch_training_size, shuffle=True, num_workers = 4)
@@ -183,9 +265,22 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 # trainLoader = torch.utils.data.DataLoader(torch_dataset_lazy, batch_size=256, shuffle=True, num_workers=0)
 
 
+# In[19]:
+
+
+# temp2 = countClasses(trainLoader)
+
+# print(only_these_labels)
+# print(temp)
+# print(temp2)
+
+# fig, ax = plt.subplots()
+# ax.bar(x = only_these_labels, height = temp2, width = 10)
+
+
 # ## Load the path to save model while training
 
-# In[12]:
+# In[20]:
 
 
 import os
@@ -212,7 +307,7 @@ else:
 pathToSaveModel = "/home/lbravo/thesis/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# In[13]:
+# In[21]:
 
 
 # store varibales on file
@@ -225,7 +320,7 @@ print("experiment parameters file created")
 
 # ## Define autoencoder structure
 
-# In[14]:
+# In[22]:
 
 
 # implementacion adaptada a 1D de https://github.com/naoto0804/pytorch-inpainting-with-partial-conv
@@ -272,7 +367,7 @@ class PartialConv(nn.Module):
         return output, new_mask
 
 
-# In[15]:
+# In[23]:
 
 
 # building classifier
@@ -426,7 +521,7 @@ class Encoder(torch.nn.Module):
 
 # ## Defining parameters to Autoencoder
 
-# In[16]:
+# In[24]:
 
 
 # check number of parameters
@@ -450,13 +545,13 @@ model = Encoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inpu
 model = model.cuda()
 
 
-# In[17]:
+# In[25]:
 
 
 print(model)
 
 
-# In[18]:
+# In[26]:
 
 
 # # print("input dimension: {0}".format(len(list(trainLoader))))
@@ -477,7 +572,7 @@ print(model)
 # print("number of parameters: " + str(count))
 
 
-# In[19]:
+# In[27]:
 
 
 # it builds a mask for the deltas. It compares the next with the previous one element.
@@ -493,7 +588,7 @@ def generate_delta_mask(mask):
     return mask_delta
 
 
-# In[20]:
+# In[28]:
 
 
 # function to generate delta time and flux
@@ -530,7 +625,7 @@ def generateDeltas(data, passBand):
     return dataToUse
 
 
-# In[21]:
+# In[29]:
 
 
 # mapping the labels to classes 0 to C-1
@@ -544,27 +639,27 @@ def mapLabels(labels):
     return labels
 
 
-# In[22]:
+# In[30]:
 
 
-# test mapLabels function
+# # test mapLabels function
 
-# input
-input_ = np.array([16, 92, 53, 16, 53])
-labels = np.array([0, 1, 2, 0, 2])
+# # input
+# input_ = np.array([16, 92, 53, 16, 53])
+# labels = np.array([0, 1, 2, 0, 2])
 
-# output
-output = mapLabels(input_)
+# # output
+# output = mapLabels(input_)
 
-# # test
-assert np.array_equal(output,  labels) == True, "Should be 0, 1, 2"
+# # # test
+# assert np.array_equal(output,  labels) == True, "Should be 0, 1, 2"
 
-print("test ok")
+# print("test ok")
 
 
 # ### Training
 
-# In[24]:
+# In[31]:
 
 
 from sklearn.metrics import f1_score
@@ -769,7 +864,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[26]:
+# In[66]:
 
 
 # get y true and labels
@@ -815,7 +910,7 @@ text_file.close()
 
 # ### Stop execution if it's on cluster
 
-# In[27]:
+# In[67]:
 
 
 import sys
@@ -827,7 +922,7 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[ ]:
+# In[33]:
 
 
 # load losses array
@@ -844,14 +939,14 @@ ax[0].set_xlabel("N° epoch")
 ax[0].set_ylabel("Loss")
 ax[0].plot(losses.iloc[:, 0], label = "train")
 ax[0].plot(losses.iloc[:, 1], label = "validation")
-ax[0].scatter(429, 0.000845159766508081, c = "r", linewidths = 10)
+# ax[0].scatter(429, 0.000845159766508081, c = "r", linewidths = 10)
 ax[0].legend()
 
 # f1 scores
 ax[1].set_xlabel("N° epoch")
 ax[1].set_ylabel("F1 score")
 ax[1].plot(f1Scores)
-ax[1].scatter(429, f1Scores.iloc[428], c = "r", linewidths = 10)
+# ax[1].scatter(429, f1Scores.iloc[428], c = "r", linewidths = 10)
 
 
 # ax[0].scatter(429, 0)
@@ -859,7 +954,7 @@ ax[1].scatter(429, f1Scores.iloc[428], c = "r", linewidths = 10)
 
 # Red point is the epoch with lower value in 
 
-# In[ ]:
+# In[34]:
 
 
 # confusion matrix
@@ -873,7 +968,7 @@ display(cm)
 sn.heatmap(cm, annot=True)
 
 
-# In[ ]:
+# In[35]:
 
 
 # classification report
