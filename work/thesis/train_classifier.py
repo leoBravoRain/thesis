@@ -19,11 +19,11 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 6
+number_experiment = 7
 number_experiment = str(number_experiment)
 
 # add general comment about experiment 
-comment = "encoder as clasifier with periodic + variable (without class balancing)"
+comment = "encoder as clasifier with periodic + variable (with class balancing)"
 
 
 # In[2]:
@@ -51,7 +51,7 @@ hiddenDim = 100
 inputDim = 72
 
 # training
-epochs = 3000
+epochs = 2000
 
 # band
 # passband = 5
@@ -69,7 +69,7 @@ learning_rate = 1e-3
 
 # # Import libraries
 
-# In[5]:
+# In[4]:
 
 
 import pandas as pd
@@ -93,12 +93,12 @@ import math
 
 from torch import nn
 
-# from torchsampler import ImbalancedDatasetSampler
+from torchsampler import ImbalancedDatasetSampler
 
 
 # # Load data
 
-# In[6]:
+# In[5]:
 
 
 # define path to dataset
@@ -107,7 +107,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[7]:
+# In[6]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -117,29 +117,9 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels)
 
 
-# # Ploting one light curve
-
-# In[8]:
-
-
-# lc_data, lc_label, lc_plasticc_id = torch_dataset_lazy.__getitem__(123)
-# display(lc_plasticc_id, lc_label)
-# 6 bands: u g r i z Y
-# 4 sequences: mjd, flux, error, mask
-# 72 samples
-# display(lc_data.shape, lc_data.dtype)
-# print(lc_data.detach().numpy()[0, 0, :])
-
-
-# In[9]:
-
-
-# plot_light_curve(torch_dataset_lazy, index_in_dataset=1234)
-
-
 # # Spliting data (train/test)
 
-# In[11]:
+# In[7]:
 
 
 # Spliting the data
@@ -169,118 +149,125 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[12]:
+# In[8]:
 
 
-# # count classes in dataloader
-# # return array of counter of each class
-# def countClasses(dataLoader):
+# count classes in dataloader
+# return array of counter of each class
+def countClasses(dataLoader):
     
-#     classCounter = np.zeros(shape = (len(only_these_labels),))
+    classCounter = np.zeros(shape = (len(only_these_labels),))
     
-#     for data in dataLoader:
+    for data in dataLoader:
         
-#         # count how many instance of class x
-#         for i in range(len(only_these_labels)):
+        # count how many instance of class x
+        for i in range(len(only_these_labels)):
 
-#             classCounter[i] += np.count_nonzero(data[1] == only_these_labels[i])
+            classCounter[i] += np.count_nonzero(data[1] == only_these_labels[i])
             
-#     return classCounter
+    return classCounter
 
 
-# In[13]:
+# In[9]:
 
 
-# temp = countClasses(trainDataset)
+print("initila distribution")
+initialClassesDistribution = countClasses(trainDataset)
 
 # fig, ax = plt.subplots()
-# ax.bar(x = only_these_labels, height = temp, width = 10)
+# ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[14]:
+# In[10]:
 
 
-# print(np.sum(temp))
+# This code was adapted from here: https://www.kaggle.com/c/siim-isic-melanoma-classification/discussion/165212
+
+class ImbalancedDatasetSampler(torch.utils.data.sampler.Sampler):
+    """Samples elements randomly from a given list of indices for imbalanced dataset
+    Arguments:
+        indices (list, optional): a list of indices
+        num_samples (int, optional): number of samples to draw
+        callback_get_label func: a callback-like function which takes two arguments - dataset and index
+    """
+
+    def __init__(self, dataset, indices=None, num_samples=None, callback_get_label=None):
+
+        # if indices is not provided, 
+        # all elements in the dataset will be considered
+        self.indices = list(range(len(dataset)))             if indices is None else indices
+
+        # define custom callback
+        self.callback_get_label = callback_get_label
+
+        # if num_samples is not provided, 
+        # draw `len(indices)` samples in each iteration
+        self.num_samples = len(self.indices)             if num_samples is None else num_samples
+
+        # distribution of classes in the dataset 
+        label_to_count = {}
+        
+        for idx in self.indices:
+            label = self._get_label(dataset, idx)
+#             label = 0]
+            if label in label_to_count:
+                label_to_count[label] += 1
+            else:
+                label_to_count[label] = 1
+
+        # weight for each sample
+        weights = [1.0 / label_to_count[self._get_label(dataset, idx)]
+                   for idx in self.indices]
+        self.weights = torch.DoubleTensor(weights)
+
+    def _get_label(self, dataset, idx):  
+        
+        # edit this for work with this dataset
+        return dataset[idx][1]
+
+    def __iter__(self):
+        return (self.indices[i] for i in torch.multinomial(
+            self.weights, self.num_samples, replacement=True))
+
+    def __len__(self):
+        return self.num_samples
 
 
-# In[15]:
-
-
-# # get classes counter
-# samples_weights = 1 / countClasses(trainDataset)
-
-# assert len(samples_weights) == (len(only_these_labels)) 
-
-# # create sampler
-# sampler = torch.utils.data.sampler.WeightedRandomSampler(
-#     samples_weights, 
-#     num_samples = batch_training_size, 
-# #     replacement=True
-# )
-
-
-# In[16]:
-
-
-# print(temp)
-# print(samples_weights)
-# print(list(sampler))
-
-
-# In[17]:
+# In[11]:
 
 
 # # Create data loader (minibatches)
 
-# # train loader
-trainLoader = torch.utils.data.DataLoader(trainDataset, batch_size= batch_training_size, shuffle=True, num_workers = 4)
-
-# trainLoader = torch.utils.data.DataLoader(
-#     trainDataset, 
-#     batch_size= batch_training_size, 
-# #     shuffle=True, 
-#     num_workers = 4,
-# #     sampler = sampler
-# )
-
-
-# trainLoader = torch.utils.data.DataLoader(
-#     trainDataset, 
-#     batch_size= batch_training_size, 
-#     num_workers = 4, 
-# #     sampler=ImbalancedDatasetSampler(trainDataset),
-#     samples = ImbalancedDatasetSampler(
-#         dataset,
-#         indices=train_idx,
-#         callback_get_label= lambda dataset, idx:dataset[idx]['label'].item())
-# )
-
-# print("test ok")
+# training loader
+trainLoader = torch.utils.data.DataLoader(
+    trainDataset, 
+    batch_size = batch_training_size, 
+    # to balance classes
+    sampler=ImbalancedDatasetSampler(trainDataset),
+)
 
 # validation loader
-validationLoader = torch.utils.data.DataLoader(validationDataset, batch_size= batch_training_size, shuffle=True, num_workers = 4)
+validationLoader = torch.utils.data.DataLoader(validationDataset, batch_size= batch_training_size,  num_workers = 4)
 
 # # test loader
 testLoader = torch.utils.data.DataLoader(testDataset)
 # trainLoader = torch.utils.data.DataLoader(torch_dataset_lazy, batch_size=256, shuffle=True, num_workers=0)
 
 
-# In[19]:
+# In[12]:
 
 
-# temp2 = countClasses(trainLoader)
-
-# print(only_these_labels)
-# print(temp)
-# print(temp2)
+print("balanced distribution")
+balancedClassesDistribution = countClasses(trainLoader)
 
 # fig, ax = plt.subplots()
+# ax.bar(x = np.arange(6), height = balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
 # ## Load the path to save model while training
 
-# In[20]:
+# In[13]:
 
 
 import os
@@ -307,12 +294,12 @@ else:
 pathToSaveModel = "/home/lbravo/thesis/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# In[21]:
+# In[14]:
 
 
 # store varibales on file
 text_file = open("experiments/" + number_experiment + "/experimentParameters.txt", "w")
-text = "N° experiment: {7}\n General comment: {13}\n Classes: {0}\n train_size: {9}\n validation_size: {10}\n test_size: {11}\n total dataset size: {12}\n Epochs: {8}\n Latent dimension: {1}\n Hidden dimension: {2}\n Input dimension: {3}\n Passband: {4}\n Learning rate: {5}\n Batch training size: {6}".format(only_these_labels, latentDim, hiddenDim, inputDim, passband, learning_rate, batch_training_size, number_experiment, epochs, train_size, validation_size, test_size, train_size + validation_size + test_size, comment)
+text = "N° experiment: {7}\n General comment: {13}\n Classes: {0}\n train_size: {9}\n validation_size: {10}\n test_size: {11}\n total dataset size: {12}\n Epochs: {8}\n Latent dimension: {1}\n Hidden dimension: {2}\n Input dimension: {3}\n Passband: {4}\n Learning rate: {5}\n Batch training size: {6}\n initial train classes distribution: {14}\nbalanced train class distribution: {15}".format(only_these_labels, latentDim, hiddenDim, inputDim, passband, learning_rate, batch_training_size, number_experiment, epochs, train_size, validation_size, test_size, train_size + validation_size + test_size, comment, initialClassesDistribution, balancedClassesDistribution)
 text_file.write(text)
 text_file.close()
 print("experiment parameters file created")
@@ -320,7 +307,7 @@ print("experiment parameters file created")
 
 # ## Define autoencoder structure
 
-# In[22]:
+# In[15]:
 
 
 # implementacion adaptada a 1D de https://github.com/naoto0804/pytorch-inpainting-with-partial-conv
@@ -367,7 +354,7 @@ class PartialConv(nn.Module):
         return output, new_mask
 
 
-# In[23]:
+# In[16]:
 
 
 # building classifier
@@ -521,7 +508,7 @@ class Encoder(torch.nn.Module):
 
 # ## Defining parameters to Autoencoder
 
-# In[24]:
+# In[17]:
 
 
 # check number of parameters
@@ -545,13 +532,13 @@ model = Encoder(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inpu
 model = model.cuda()
 
 
-# In[25]:
+# In[18]:
 
 
 print(model)
 
 
-# In[26]:
+# In[19]:
 
 
 # # print("input dimension: {0}".format(len(list(trainLoader))))
@@ -572,7 +559,7 @@ print(model)
 # print("number of parameters: " + str(count))
 
 
-# In[27]:
+# In[20]:
 
 
 # it builds a mask for the deltas. It compares the next with the previous one element.
@@ -588,7 +575,7 @@ def generate_delta_mask(mask):
     return mask_delta
 
 
-# In[28]:
+# In[21]:
 
 
 # function to generate delta time and flux
@@ -625,7 +612,7 @@ def generateDeltas(data, passBand):
     return dataToUse
 
 
-# In[29]:
+# In[22]:
 
 
 # mapping the labels to classes 0 to C-1
@@ -639,7 +626,7 @@ def mapLabels(labels):
     return labels
 
 
-# In[30]:
+# In[23]:
 
 
 # # test mapLabels function
@@ -657,9 +644,31 @@ def mapLabels(labels):
 # print("test ok")
 
 
+# In[24]:
+
+
+# save best model
+def saveBestModel(model, pathToSaveModel, number_experiment, nepoch, newError):
+    
+    print("New min test loss. Saving model")
+
+#         print("old: ", currentError)
+#         print("new: ", newError)
+
+    # save model
+    torch.save(model.state_dict(), pathToSaveModel)
+
+    # write metrics
+    text_file = open("experiments/" + number_experiment + "/bestScoresModelTraining.txt", "w")
+    metricsText = "Epoch: {0}\n Reconstruction test error: {1}".format(nepoch, newError)
+    text_file.write(metricsText)
+    text_file.close()
+        
+
+
 # ### Training
 
-# In[31]:
+# In[25]:
 
 
 from sklearn.metrics import f1_score
@@ -787,6 +796,9 @@ for nepoch in range(epochs):
     # get epoch f1 score
     f1Scores[nepoch] = f1Score / batchCounter
     
+    
+    
+    
     # plot loss values
     # if it's not cluster
     if (not trainingOnGuanaco) or (not trainWithJustPython):
@@ -827,44 +839,41 @@ for nepoch in range(epochs):
         text_file.close()
         break
         
+        
+        
     #### Saving best model ####
     
     # if epoch test loss is smaller than global min
-    if (epoch_test_loss/validation_size) < minTestLossGlobalSoFar:
-        
-        print("New min test loss. Saving model")
-#         print("old: ", minTestLossGlobalSoFar)
-#         print("new: ", epoch_test_loss)
-        
-        # save model
-        torch.save(model.state_dict(), pathToSaveModel)
+    if test_loss[nepoch] < minTestLossGlobalSoFar:
         
         # update global min
-        minTestLossGlobalSoFar = epoch_test_loss
+        minTestLossGlobalSoFar = test_loss[nepoch]
         
-        # write metrics
-        text_file = open("experiments/" + number_experiment + "/bestScoresModelTraining.txt", "w")
-        metricsText = "Epoch: {0}\n Reconstruction test error: {1}".format(nepoch, minTestLossGlobalSoFar)
-        text_file.write(metricsText)
-        text_file.close()
+        # save model
+        saveBestModel(model, pathToSaveModel, number_experiment, nepoch, minTestLossGlobalSoFar)
+                
+   
 
-        
-        
+
     # save losses
     print("saving losses")
     losses = np.asarray([train_loss, test_loss]).T
     np.savetxt("experiments/" + number_experiment + "/training_losses.csv", losses, delimiter=",")
     
 
+    
+    
     # save f1 scores
     print("saving f1 scores")
     np.savetxt("experiments/" + number_experiment + "/f1Scores.csv", f1Scores, delimiter=",")
 
+    
+    
 # final message
 print("training has finished")
 
 
-# In[66]:
+# In[26]:
 
 
 # get y true and labels
@@ -910,7 +919,7 @@ text_file.close()
 
 # ### Stop execution if it's on cluster
 
-# In[67]:
+# In[27]:
 
 
 import sys
@@ -922,7 +931,7 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[33]:
+# In[28]:
 
 
 # load losses array
@@ -952,9 +961,13 @@ ax[1].plot(f1Scores)
 # ax[0].scatter(429, 0)
 
 
-# Red point is the epoch with lower value in 
+# In[29]:
 
-# In[34]:
+
+get_ipython().system('cat experiments/7/bestScoresModelTraining.txt')
+
+
+# In[30]:
 
 
 # confusion matrix
@@ -968,9 +981,9 @@ display(cm)
 sn.heatmap(cm, annot=True)
 
 
-# In[35]:
+# In[31]:
 
 
 # classification report
-get_ipython().system('cat ./experiments/6/clasificationReport.txt')
+get_ipython().system('cat ./experiments/7/clasificationReport.txt')
 
