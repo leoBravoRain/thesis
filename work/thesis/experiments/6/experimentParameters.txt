@@ -5,7 +5,7 @@ N° experiment: 6
  validation_size: 49410
  test_size: 49410
  total dataset size: 494096
- Epochs: 1000
+ Epochs: 3000
  Latent dimension: 100
  Hidden dimension: 100
  Input dimension: 72

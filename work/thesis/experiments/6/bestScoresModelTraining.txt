@@ -1,2 +1,2 @@
-Epoch: 999
- Reconstruction test error: 208.87815633416176
+Epoch: 2999
+ Reconstruction test error: 292.97980260849
