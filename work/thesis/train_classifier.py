@@ -69,7 +69,7 @@ learning_rate = 1e-3
 
 # # Import libraries
 
-# In[4]:
+# In[1]:
 
 
 import pandas as pd
@@ -92,8 +92,6 @@ from plasticc_dataset_torch import get_plasticc_datasets
 import math
 
 from torch import nn
-
-from torchsampler import ImbalancedDatasetSampler
 
 
 # # Load data
