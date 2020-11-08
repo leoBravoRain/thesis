@@ -1,0 +1,16 @@
+N° experiment: 7
+ General comment: encoder as clasifier with periodic + variable (with class balancing)
+ Classes: [16, 92, 53, 88, 65, 6]
+ train_size: 395276
+ validation_size: 49410
+ test_size: 49410
+ total dataset size: 494096
+ Epochs: 2000
+ Latent dimension: 100
+ Hidden dimension: 100
+ Input dimension: 72
+ Passband: 5
+ Learning rate: 0.001
+ Batch training size: 128
+ initial train classes distribution: [ 78009. 157822.   1171.  81591.  75536.   1147.]
+balanced train class distribution: [65918. 66224. 65706. 65539. 66354. 65535.]
