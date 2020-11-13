@@ -1,0 +1,2 @@
+Epoch: 0
+ Reconstruction test error: 0.01637007986626974

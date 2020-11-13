@@ -84,19 +84,20 @@ def generate_delta_mask(mask):
     
     # generate delta mask
 #     mask_delta = mask[:, 1:].type(torch.BoolTensor) & mask[:, :-1].type(torch.BoolTensor)
-    mask_delta = mask[:, 1:]
+    mask_delta = mask[:, :, 1:]
     
     return mask_delta
 
 
 # function to generate delta time and flux
-# data = [batchSize, channels, [time, flux, err, mask], light curve]
+# data = [batchSize, channels, [time, flux, err, mask], light curve samples]
 def generateDeltas(data, passBand):
     
     # work with delta time and magnitude
     
 #     print("generate deltas input shape: {0}".format(data.shape) )
     # delta time
+#     tmpDeltaTime = data[:, passBand, 0, 1:] - data[:, passBand, 0, :-1]
     tmpDeltaTime = data[:, passBand, 0, 1:] - data[:, passBand, 0, :-1]
 
 #     print("generate deltas time shape: {0}".format(tmpDeltaTime.shape) )
@@ -112,7 +113,7 @@ def generateDeltas(data, passBand):
     tmpMask = generate_delta_mask(data[:, passBand, 3,:])
     
     # concatenate tensors
-    dataToUse = torch.cat((tmpDeltaTime.unsqueeze(1), tmpDeltaMagnitude.unsqueeze(1), tmpDeltaMagError.unsqueeze(1), tmpMask.unsqueeze(1)), 1)
+    dataToUse = torch.cat((tmpDeltaTime.unsqueeze(2), tmpDeltaMagnitude.unsqueeze(2), tmpDeltaMagError.unsqueeze(2), tmpMask.unsqueeze(2)), 2)
 #     print("data to use shape: {0}".format(dataToUse.shape))
     
     # normalize data
@@ -168,7 +169,7 @@ def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, sta
 
         data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
 
-        outputs = model.forward(data)
+        outputs = model.forward(data, passband)
 
         prediction = torch.argmax(outputs, 1).cpu().numpy()
 
