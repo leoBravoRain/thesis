@@ -6,11 +6,17 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[28]:
 
 
 # training on guanaco
-# ATENTION: if it is going to run on guanaco, so comment the %matplotlib magic in next block
+# ATENTION: if it is going to run on guanaco:
+# 1) comment the %matplotlib magic in next block and any magic (something like %code)
+# 2) Change to True the trainingOnGuanaco vairbale
+# 3) set epoch with an appropiate number
+# 4) add comment to experiemnts
+# 5) Add this file as python file 
+# 6) Change launchJobOnGuanaco file to run this file but with python format
 trainingOnGuanaco = True
 
 # train without notebook
@@ -19,14 +25,15 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 8
+number_experiment = 9
 number_experiment = str(number_experiment)
 
 # add general comment about experiment 
-comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
+# comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
+comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more + 6 channels"
 
 
-# In[2]:
+# In[45]:
 
 
 # classes to analyze
@@ -51,16 +58,16 @@ hiddenDim = 100
 inputDim = 72
 
 # training
-epochs = 1000
+epochs = 2000
 
 # band
 # passband = 5
-passband = 5
+passband = [0, 1, 2, 3, 5]
 
 batch_training_size = 128
 
 
-# In[3]:
+# In[46]:
 
 
 # training params
@@ -69,7 +76,7 @@ learning_rate = 1e-3
 
 # # Import libraries
 
-# In[4]:
+# In[47]:
 
 
 import pandas as pd
@@ -106,7 +113,7 @@ from auxFunctions import *
 
 # # Load data
 
-# In[5]:
+# In[48]:
 
 
 # define path to dataset
@@ -115,7 +122,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[6]:
+# In[49]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -127,7 +134,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[7]:
+# In[50]:
 
 
 # Spliting the data
@@ -157,7 +164,7 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[8]:
+# In[51]:
 
 
 print("initila distribution")
@@ -167,7 +174,7 @@ initialClassesDistribution = countClasses(trainDataset, only_these_labels)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[9]:
+# In[52]:
 
 
 # # Create data loader (minibatches)
@@ -188,7 +195,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 # trainLoader = torch.utils.data.DataLoader(torch_dataset_lazy, batch_size=256, shuffle=True, num_workers=0)
 
 
-# In[1]:
+# In[53]:
 
 
 print("balanced distribution")
@@ -201,7 +208,7 @@ balancedClassesDistribution = countClasses(trainLoader, only_these_labels)
 
 # ## Load the path to save model while training
 
-# In[12]:
+# In[54]:
 
 
 import os
@@ -228,7 +235,7 @@ else:
 pathToSaveModel = "/home/lbravo/thesis/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# In[13]:
+# In[55]:
 
 
 # store varibales on file
@@ -241,7 +248,7 @@ print("experiment parameters file created")
 
 # ## Defining parameters to Autoencoder
 
-# In[14]:
+# In[56]:
 
 
 # check number of parameters
@@ -253,19 +260,19 @@ latentDim = latentDim
 hiddenDim = hiddenDim
 inputDim = inputDim
 
-passband = passband
+# passband = passband
 
 num_classes = len(only_these_labels)
 
 
 # defining model
-model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim, num_classes = num_classes)
+model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim, num_classes = num_classes, passband = passband)
 
 # mdel to GPU
 model = model.cuda()
 
 
-# In[15]:
+# In[57]:
 
 
 print(model)
@@ -273,7 +280,7 @@ print(model)
 
 # ### Training
 
-# In[16]:
+# In[58]:
 
 
 from sklearn.metrics import f1_score
@@ -340,11 +347,20 @@ for nepoch in range(epochs):
         optimizer.zero_grad()
             
         # this take the deltas (time and magnitude)
+#         data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
         data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
 
-        # get model output
-        outputs = model.forward(data)
+#         # testing tensor size 
+#         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
+#         print("test ok")
         
+        # get model output
+        outputs = model.forward(data, passband)
+        
+#         # testing output shape size
+#         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
+#         print("test ok")
+
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).cuda())
         
@@ -381,8 +397,12 @@ for nepoch in range(epochs):
         
         data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
         
-        outputs = model.forward(data)
+        outputs = model.forward(data, passband)
         
+#           # testing output shape size
+#         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
+#         print("test ok")
+
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).cuda())
     
@@ -478,7 +498,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[21]:
+# In[18]:
 
 
 # get metrics on trainig dataset
@@ -491,7 +511,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[22]:
+# In[19]:
 
 
 import sys
@@ -503,13 +523,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[38]:
+# In[20]:
 
 
-get_ipython().system('cat ../experiments/7/experimentParameters.txt')
+get_ipython().system('cat ../experiments/8/experimentParameters.txt')
 
 
-# In[32]:
+# In[22]:
 
 
 # load losses array
@@ -535,19 +555,19 @@ ax[1].plot(f1Scores)
 
 # best model
 # values copied from the txt file
-bestModelEpoch = 785
-bestModelError = 0.00434128265165168
-ax[0].scatter(bestModelEpoch, bestModelError, c = "r", linewidths = 10)
-ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
+# bestModelEpoch = 785
+# bestModelError = 0.00434128265165168
+# ax[0].scatter(bestModelEpoch, bestModelError, c = "r", linewidths = 10)
+# ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[33]:
+# In[ ]:
 
 
-get_ipython().system('cat ../experiments/7/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/8/bestScoresModelTraining.txt')
 
 
-# In[34]:
+# In[24]:
 
 
 # confusion matrix
@@ -562,23 +582,23 @@ print("Training")
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[35]:
+# In[25]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[36]:
+# In[27]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/7/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/9/clasificationReportTrain.txt')
 
 
-# In[37]:
+# In[26]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/7/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/9/clasificationReportValidation.txt')
 
