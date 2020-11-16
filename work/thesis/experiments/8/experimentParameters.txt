@@ -5,12 +5,12 @@ N° experiment: 8
  validation_size: 49410
  test_size: 49410
  total dataset size: 494096
- Epochs: 1000
+ Epochs: 2000
  Latent dimension: 100
  Hidden dimension: 100
  Input dimension: 72
  Passband: 5
  Learning rate: 0.001
  Batch training size: 128
- initial train classes distribution: [ 77998. 157908.   1192.  81463.  75533.   1182.]
-balanced train class distribution: [65900. 66037. 65729. 65711. 65517. 66382.]
+ initial train classes distribution: [ 77925. 157850.   1218.  81546.  75574.   1163.]
+balanced train class distribution: [66155. 65584. 65414. 65965. 66035. 66123.]
