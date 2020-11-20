@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
 trainWithJustPython = False
@@ -33,7 +33,7 @@ number_experiment = str(number_experiment)
 comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more + 6 channels"
 
 
-# In[32]:
+# In[2]:
 
 
 # classes to analyze
@@ -67,7 +67,7 @@ passband = [0, 1, 2, 3, 5]
 batch_training_size = 128
 
 
-# In[33]:
+# In[3]:
 
 
 # training params
@@ -133,12 +133,6 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 
 # # Spliting data (train/test)
-
-# In[7]:
-
-
-# get_ipython().run_line_magic('pinfo', 'torch.utils.data.random_split')
-
 
 # In[19]:
 
