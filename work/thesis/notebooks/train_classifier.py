@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[28]:
+# In[1]:
 
 
 # training on guanaco
@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 9
+number_experiment = 8
 number_experiment = str(number_experiment)
 
 # add general comment about experiment 
@@ -33,7 +33,7 @@ number_experiment = str(number_experiment)
 comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more + 6 channels"
 
 
-# In[45]:
+# In[32]:
 
 
 # classes to analyze
@@ -58,7 +58,7 @@ hiddenDim = 100
 inputDim = 72
 
 # training
-epochs = 2000
+epochs = 2
 
 # band
 # passband = 5
@@ -67,7 +67,7 @@ passband = [0, 1, 2, 3, 5]
 batch_training_size = 128
 
 
-# In[46]:
+# In[33]:
 
 
 # training params
@@ -76,7 +76,7 @@ learning_rate = 1e-3
 
 # # Import libraries
 
-# In[47]:
+# In[4]:
 
 
 import pandas as pd
@@ -113,7 +113,7 @@ from auxFunctions import *
 
 # # Load data
 
-# In[48]:
+# In[5]:
 
 
 # define path to dataset
@@ -122,7 +122,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[49]:
+# In[6]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -134,7 +134,13 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[50]:
+# In[7]:
+
+
+get_ipython().run_line_magic('pinfo', 'torch.utils.data.random_split')
+
+
+# In[19]:
 
 
 # Spliting the data
@@ -154,7 +160,14 @@ test_size = torch_dataset_lazy.__len__() - train_size - validation_size
 #print(test_size)
 
 # spliting the torch dataset
-trainDataset, validationDataset,  testDataset = torch.utils.data.random_split(torch_dataset_lazy, [train_size, validation_size, test_size])
+# set seed
+# torch.manual_seed(0)
+trainDataset, validationDataset,  testDataset = torch.utils.data.random_split(
+    torch_dataset_lazy, 
+    [train_size, validation_size, test_size],
+    generator = torch.Generator().manual_seed(0)
+#     generator=torch.manual_seed(0),
+)
 
 print("train size:", train_size)
 print("validation size: ", validation_size)
@@ -164,7 +177,7 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[51]:
+# In[20]:
 
 
 print("initila distribution")
@@ -174,7 +187,7 @@ initialClassesDistribution = countClasses(trainDataset, only_these_labels)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[52]:
+# In[21]:
 
 
 # # Create data loader (minibatches)
@@ -195,7 +208,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 # trainLoader = torch.utils.data.DataLoader(torch_dataset_lazy, batch_size=256, shuffle=True, num_workers=0)
 
 
-# In[53]:
+# In[22]:
 
 
 print("balanced distribution")
@@ -206,9 +219,61 @@ balancedClassesDistribution = countClasses(trainLoader, only_these_labels)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
+# In[23]:
+
+
+# firstIds = [] 
+
+# for data in trainLoader:
+    
+#     # ids: data[2]
+#     firstIds.extend(data[2].tolist())
+
+# # print(len(firstIds))
+# # print(len(secondIds))
+
+
+# In[24]:
+
+
+# secondIds = []
+
+# for data in trainLoader:
+    
+#     # ids: data[2]
+#     secondIds.extend(data[2].tolist())
+
+# # print(len(firstIds))
+# # print(len(secondIds))
+
+
+# In[25]:
+
+
+# test id arrays is the same
+# firstIds.sort()
+# secondIds.sort()
+
+
+# prevIds = np.array(firstIds)
+
+# currentIds = np.array(secondIds)
+
+# print(prevIds[:4])
+# print(currentIds[:4])
+# comp = prevIds == currentIds
+
+# # print(comp)
+
+# # print(comp.all())
+# # print(prevIds == currentIds)
+# assert (comp).all(), "Should be the same ids"
+# print("test ok")
+
+
 # ## Load the path to save model while training
 
-# In[54]:
+# In[26]:
 
 
 import os
@@ -235,7 +300,7 @@ else:
 pathToSaveModel = "/home/lbravo/thesis/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# In[55]:
+# In[27]:
 
 
 # store varibales on file
@@ -248,7 +313,7 @@ print("experiment parameters file created")
 
 # ## Defining parameters to Autoencoder
 
-# In[56]:
+# In[28]:
 
 
 # check number of parameters
@@ -272,7 +337,7 @@ model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_
 model = model.cuda()
 
 
-# In[57]:
+# In[29]:
 
 
 print(model)
@@ -280,12 +345,19 @@ print(model)
 
 # ### Training
 
-# In[58]:
+# In[30]:
+
+
+import torch
+print(torch.__version__)
+
+
+# In[31]:
 
 
 from sklearn.metrics import f1_score
 
-# optimizer
+# optimizera
 optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum = 0.5)
 
 # loss function
@@ -523,13 +595,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[20]:
+# In[15]:
 
 
 get_ipython().system('cat ../experiments/8/experimentParameters.txt')
 
 
-# In[22]:
+# In[16]:
 
 
 # load losses array
@@ -561,13 +633,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[ ]:
+# In[17]:
 
 
 get_ipython().system('cat ../experiments/8/bestScoresModelTraining.txt')
 
 
-# In[24]:
+# In[23]:
 
 
 # confusion matrix
@@ -582,23 +654,23 @@ print("Training")
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[25]:
+# In[24]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[27]:
+# In[25]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/9/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/8/clasificationReportTrain.txt')
 
 
 # In[26]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/9/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/8/clasificationReportValidation.txt')
 
