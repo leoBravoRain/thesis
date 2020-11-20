@@ -137,7 +137,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 # In[7]:
 
 
-get_ipython().run_line_magic('pinfo', 'torch.utils.data.random_split')
+# get_ipython().run_line_magic('pinfo', 'torch.utils.data.random_split')
 
 
 # In[19]:
