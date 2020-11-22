@@ -22,15 +22,21 @@ trainingOnGuanaco = True
 # train without notebook
 trainWithJustPython = False
 
+# seed to generate same datasets
+seed = 0
+
 # number_experiment (this is just a name)
 # priors:
 # 1
 number_experiment = 8
 number_experiment = str(number_experiment)
 
+# training
+epochs = 2
+
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more + 6 channels"
+comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + 6 channels + seed " + str(seed)
 
 
 # In[2]:
@@ -57,12 +63,9 @@ latentDim = 100
 hiddenDim = 100
 inputDim = 72
 
-# training
-epochs = 2
-
 # band
 # passband = 5
-passband = [0, 1, 2, 3, 5]
+passband = [0, 1, 2, 3, 4]
 
 batch_training_size = 128
 
@@ -134,7 +137,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[19]:
+# In[7]:
 
 
 # Spliting the data
@@ -154,13 +157,12 @@ test_size = torch_dataset_lazy.__len__() - train_size - validation_size
 #print(test_size)
 
 # spliting the torch dataset
-# set seed
-# torch.manual_seed(0)
 trainDataset, validationDataset,  testDataset = torch.utils.data.random_split(
     torch_dataset_lazy, 
     [train_size, validation_size, test_size],
-    generator = torch.Generator().manual_seed(0)
-#     generator=torch.manual_seed(0),
+    
+    # set seed
+#     generator = torch.Generator().manual_seed(seed)
 )
 
 print("train size:", train_size)
@@ -171,7 +173,7 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[20]:
+# In[8]:
 
 
 print("initila distribution")
@@ -181,7 +183,7 @@ initialClassesDistribution = countClasses(trainDataset, only_these_labels)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[21]:
+# In[9]:
 
 
 # # Create data loader (minibatches)
@@ -195,14 +197,18 @@ trainLoader = torch.utils.data.DataLoader(
 )
 
 # validation loader
-validationLoader = torch.utils.data.DataLoader(validationDataset, batch_size= batch_training_size,  num_workers = 4)
+validationLoader = torch.utils.data.DataLoader(
+    validationDataset, 
+    batch_size= batch_training_size,  
+    num_workers = 4
+)
 
 # # test loader
 testLoader = torch.utils.data.DataLoader(testDataset)
 # trainLoader = torch.utils.data.DataLoader(torch_dataset_lazy, batch_size=256, shuffle=True, num_workers=0)
 
 
-# In[22]:
+# In[10]:
 
 
 print("balanced distribution")
@@ -213,61 +219,9 @@ balancedClassesDistribution = countClasses(trainLoader, only_these_labels)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
-# In[23]:
-
-
-# firstIds = [] 
-
-# for data in trainLoader:
-    
-#     # ids: data[2]
-#     firstIds.extend(data[2].tolist())
-
-# # print(len(firstIds))
-# # print(len(secondIds))
-
-
-# In[24]:
-
-
-# secondIds = []
-
-# for data in trainLoader:
-    
-#     # ids: data[2]
-#     secondIds.extend(data[2].tolist())
-
-# # print(len(firstIds))
-# # print(len(secondIds))
-
-
-# In[25]:
-
-
-# test id arrays is the same
-# firstIds.sort()
-# secondIds.sort()
-
-
-# prevIds = np.array(firstIds)
-
-# currentIds = np.array(secondIds)
-
-# print(prevIds[:4])
-# print(currentIds[:4])
-# comp = prevIds == currentIds
-
-# # print(comp)
-
-# # print(comp.all())
-# # print(prevIds == currentIds)
-# assert (comp).all(), "Should be the same ids"
-# print("test ok")
-
-
 # ## Load the path to save model while training
 
-# In[26]:
+# In[11]:
 
 
 import os
@@ -294,7 +248,7 @@ else:
 pathToSaveModel = "/home/lbravo/thesis/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# In[27]:
+# In[12]:
 
 
 # store varibales on file
@@ -307,7 +261,7 @@ print("experiment parameters file created")
 
 # ## Defining parameters to Autoencoder
 
-# In[28]:
+# In[13]:
 
 
 # check number of parameters
@@ -331,7 +285,7 @@ model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_
 model = model.cuda()
 
 
-# In[29]:
+# In[14]:
 
 
 print(model)
@@ -339,14 +293,7 @@ print(model)
 
 # ### Training
 
-# In[30]:
-
-
-import torch
-print(torch.__version__)
-
-
-# In[31]:
+# In[15]:
 
 
 from sklearn.metrics import f1_score
@@ -409,12 +356,13 @@ for nepoch in range(epochs):
         
         data = data_[0]
         labels = data_[1].cuda()
+#         labels = data_[1]
         
         optimizer.zero_grad()
             
         # this take the deltas (time and magnitude)
-#         data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
         data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
+#         data = generateDeltas(data, passband).type(torch.FloatTensor)
 
 #         # testing tensor size 
 #         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
@@ -564,7 +512,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[18]:
+# In[16]:
 
 
 # get metrics on trainig dataset
@@ -589,13 +537,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[15]:
+# In[20]:
 
 
 get_ipython().system('cat ../experiments/8/experimentParameters.txt')
 
 
-# In[16]:
+# In[21]:
 
 
 # load losses array
@@ -627,13 +575,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[17]:
+# In[36]:
 
 
 get_ipython().system('cat ../experiments/8/bestScoresModelTraining.txt')
 
 
-# In[23]:
+# In[37]:
 
 
 # confusion matrix
@@ -648,7 +596,7 @@ print("Training")
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[24]:
+# In[38]:
 
 
 print("Validation")
