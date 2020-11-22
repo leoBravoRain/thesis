@@ -12,5 +12,5 @@ N° experiment: 8
  Passband: [0, 1, 2, 3, 4]
  Learning rate: 0.001
  Batch training size: 128
- initial train classes distribution: [751. 302.  33. 581. 832. 121.]
-balanced train class distribution: [414. 417. 469. 444. 481. 395.]
+ initial train classes distribution: [735. 291.  30. 588. 850. 126.]
+balanced train class distribution: [455. 435. 438. 415. 428. 449.]

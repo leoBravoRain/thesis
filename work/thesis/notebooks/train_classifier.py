@@ -162,7 +162,7 @@ trainDataset, validationDataset,  testDataset = torch.utils.data.random_split(
     [train_size, validation_size, test_size],
     
     # set seed
-#     generator = torch.Generator().manual_seed(seed)
+    generator = torch.Generator().manual_seed(seed)
 )
 
 print("train size:", train_size)
