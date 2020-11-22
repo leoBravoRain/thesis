@@ -9,8 +9,8 @@ N° experiment: 8
  Latent dimension: 100
  Hidden dimension: 100
  Input dimension: 72
- Passband: [0, 1, 2, 3, 4]
+ Passband: [0, 1, 2, 3, 4, 5]
  Learning rate: 0.001
  Batch training size: 128
  initial train classes distribution: [735. 291.  30. 588. 850. 126.]
-balanced train class distribution: [455. 435. 438. 415. 428. 449.]
+balanced train class distribution: [415. 454. 454. 435. 422. 440.]

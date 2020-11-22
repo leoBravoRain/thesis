@@ -169,7 +169,7 @@ def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, sta
 
         data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
 
-        outputs = model.forward(data, passband)
+        outputs = model.forward(data)
 
         prediction = torch.argmax(outputs, 1).cpu().numpy()
 

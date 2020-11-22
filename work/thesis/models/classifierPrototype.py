@@ -58,7 +58,7 @@ class EncoderClassifier(torch.nn.Module):
 #         self.activationLinear = torch.nn.ReLU()
 
     # forward method
-    def forward(self, x, passband):
+    def forward(self, x):
         
         # input shape: [batch_size, channels, sequence_length]
 #         print("input shape: {0}".format(x.shape))
@@ -74,7 +74,7 @@ class EncoderClassifier(torch.nn.Module):
 #         outputTimeConv = self.activationConv(self.conv1(x[:, 0, :].unsqueeze(1)))
         # partial conv
 #         outputTimeConv, maskTime = self.pconv1(x[:, passband, 0, :].unsqueeze(1), x[:, passband, 3, :].unsqueeze(1))
-        outputTimeConv, maskTime = self.pconv1(x[:, passband, 0, :], x[:, passband, 3, :])
+        outputTimeConv, maskTime = self.pconv1(x[:, :, 0, :], x[:, :, 3, :])
         # activation function
         outputTimeConv = self.activationConv(outputTimeConv)
         
@@ -85,7 +85,7 @@ class EncoderClassifier(torch.nn.Module):
         
         # partial conv
         # output, newMask = pconv1(data, mask)
-        outputMagConv, maskMag = self.pconv1(x[:, passband, 1, :], x[:, passband, 3, :])
+        outputMagConv, maskMag = self.pconv1(x[:, :, 1, :], x[:, :, 3, :])
         # activation function
         outputMagConv = self.activationConv(outputMagConv)
         
@@ -95,7 +95,7 @@ class EncoderClassifier(torch.nn.Module):
         
         # partial conv
         # output, newMask = pconv1(data, mask)
-        outputMagErrorConv, maskError = self.pconv1(x[:, passband, 2, :], x[:, passband, 3, :])
+        outputMagErrorConv, maskError = self.pconv1(x[:, :, 2, :], x[:, :, 3, :])
         # activation function
         outputMagErrorConv = self.activationConv(outputMagErrorConv)
         

@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[4]:
 
 
 # training on guanaco
@@ -34,12 +34,8 @@ number_experiment = str(number_experiment)
 # training
 epochs = 2000
 
-# add general comment about experiment 
-# comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + 6 channels + seed " + str(seed)
 
-
-# In[2]:
+# In[5]:
 
 
 # classes to analyze
@@ -65,21 +61,29 @@ inputDim = 72
 
 # band
 # passband = 5
-passband = [0, 1, 2, 3, 4]
+passband = [5]
 
 batch_training_size = 128
 
 
-# In[3]:
+# In[6]:
 
 
 # training params
 learning_rate = 1e-3
 
 
+# In[7]:
+
+
+# add general comment about experiment 
+# comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
+comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed)
+
+
 # # Import libraries
 
-# In[4]:
+# In[5]:
 
 
 import pandas as pd
@@ -116,7 +120,7 @@ from auxFunctions import *
 
 # # Load data
 
-# In[5]:
+# In[6]:
 
 
 # define path to dataset
@@ -125,7 +129,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[6]:
+# In[7]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -137,7 +141,7 @@ torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_th
 
 # # Spliting data (train/test)
 
-# In[7]:
+# In[8]:
 
 
 # Spliting the data
@@ -173,7 +177,7 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[8]:
+# In[9]:
 
 
 print("initila distribution")
@@ -183,7 +187,7 @@ initialClassesDistribution = countClasses(trainDataset, only_these_labels)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[9]:
+# In[10]:
 
 
 # # Create data loader (minibatches)
@@ -208,7 +212,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 # trainLoader = torch.utils.data.DataLoader(torch_dataset_lazy, batch_size=256, shuffle=True, num_workers=0)
 
 
-# In[10]:
+# In[11]:
 
 
 print("balanced distribution")
@@ -221,7 +225,7 @@ balancedClassesDistribution = countClasses(trainLoader, only_these_labels)
 
 # ## Load the path to save model while training
 
-# In[11]:
+# In[12]:
 
 
 import os
@@ -248,7 +252,7 @@ else:
 pathToSaveModel = "/home/lbravo/thesis/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
 
 
-# In[12]:
+# In[13]:
 
 
 # store varibales on file
@@ -261,7 +265,7 @@ print("experiment parameters file created")
 
 # ## Defining parameters to Autoencoder
 
-# In[13]:
+# In[14]:
 
 
 # check number of parameters
@@ -285,7 +289,7 @@ model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_
 model = model.cuda()
 
 
-# In[14]:
+# In[15]:
 
 
 print(model)
@@ -293,7 +297,7 @@ print(model)
 
 # ### Training
 
-# In[15]:
+# In[16]:
 
 
 from sklearn.metrics import f1_score
@@ -369,7 +373,7 @@ for nepoch in range(epochs):
 #         print("test ok")
         
         # get model output
-        outputs = model.forward(data, passband)
+        outputs = model.forward(data)
         
 #         # testing output shape size
 #         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
@@ -411,7 +415,7 @@ for nepoch in range(epochs):
         
         data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
         
-        outputs = model.forward(data, passband)
+        outputs = model.forward(data)
         
 #           # testing output shape size
 #         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
@@ -512,7 +516,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[16]:
+# In[17]:
 
 
 # get metrics on trainig dataset
@@ -525,7 +529,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[19]:
+# In[18]:
 
 
 import sys
@@ -537,7 +541,7 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[20]:
+# In[19]:
 
 
 get_ipython().system('cat ../experiments/8/experimentParameters.txt')
@@ -575,13 +579,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[36]:
+# In[22]:
 
 
 get_ipython().system('cat ../experiments/8/bestScoresModelTraining.txt')
 
 
-# In[37]:
+# In[23]:
 
 
 # confusion matrix
@@ -596,7 +600,7 @@ print("Training")
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[38]:
+# In[24]:
 
 
 print("Validation")
