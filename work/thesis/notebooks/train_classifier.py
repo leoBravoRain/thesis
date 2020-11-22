@@ -32,7 +32,7 @@ number_experiment = 8
 number_experiment = str(number_experiment)
 
 # training
-epochs = 2
+epochs = 2000
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
