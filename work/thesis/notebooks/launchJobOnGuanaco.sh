@@ -9,7 +9,7 @@
 ID=$SLURM_JOB_ID
 
 source /opt/miniconda3/etc/profile.d/conda.sh
-conda activate python37
+conda activate astro
 
 date
 gpu_ids=`/usr/local/bin/tarjeta_libre 1 ,`
