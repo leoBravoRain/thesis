@@ -1,2 +1,2 @@
-Epoch: 1968
- Reconstruction test error: 0.0019106914910365879
+Epoch: 152
+ Reconstruction test error: 0.006725431193081721
