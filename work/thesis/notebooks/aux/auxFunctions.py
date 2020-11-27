@@ -136,7 +136,7 @@ def mapLabels(labels, staticLabels):
 
 
 # save best model
-def saveBestModel(model, pathToSaveModel, number_experiment, nepoch, newError):
+def saveBestModel(model, pathToSaveModel, number_experiment, nepoch, newError, expPath):
     
     print("New min test loss. Saving model")
 
@@ -147,7 +147,7 @@ def saveBestModel(model, pathToSaveModel, number_experiment, nepoch, newError):
     torch.save(model.state_dict(), pathToSaveModel)
 
     # write metrics
-    text_file = open("../experiments/" + number_experiment + "/bestScoresModelTraining.txt", "w")
+    text_file = open("../" + expPath + "/bestScoresModelTraining.txt", "w")
     metricsText = "Epoch: {0}\n Reconstruction test error: {1}".format(nepoch, newError)
     text_file.write(metricsText)
     text_file.close()
@@ -155,7 +155,7 @@ def saveBestModel(model, pathToSaveModel, number_experiment, nepoch, newError):
     
 
 # get confusion matrix and classification report
-def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, staticLabels, number_experiment):
+def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, staticLabels, number_experiment, expPath):
     
     # get y true and labels
     predictions = np.zeros(shape = (0,))
@@ -182,12 +182,12 @@ def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, sta
     cm = confusion_matrix(labels_, predictions)
 
     print("saving confusion matrix scores")
-    np.savetxt("../experiments/" + number_experiment + "/confusionMatrix" + nameLabel + ".csv", cm, delimiter=",")
+    np.savetxt("../" + expPath + "/confusionMatrix" + nameLabel + ".csv", cm, delimiter=",")
 
 
     # classification report
     print("saving clasification report")
-    text_file = open("../experiments/" + number_experiment + "/clasificationReport" + nameLabel + ".txt", "w")
+    text_file = open("../" + expPath + "/clasificationReport" + nameLabel + ".txt", "w")
     text = classification_report(labels_, predictions)
     text_file.write(text)
     text_file.close()
