@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[4]:
+# In[19]:
 
 
 # training on guanaco
@@ -23,7 +23,7 @@ trainingOnGuanaco = True
 trainWithJustPython = False
 
 # seed to generate same datasets
-seed = 1
+seed = 0
 
 # number_experiment (this is just a name)
 # priors:
@@ -32,10 +32,10 @@ number_experiment = 9
 number_experiment = str(number_experiment)
 
 # training
-epochs = 2000
+epochs = 1500
 
 
-# In[5]:
+# In[20]:
 
 
 # classes to analyze
@@ -60,25 +60,27 @@ hiddenDim = 100
 inputDim = 72
 
 # band
-#passband = [5]
+# passband = 5
 passband = [0, 1, 2, 3, 4, 5]
 
 batch_training_size = 128
 
 
-# In[6]:
+# In[21]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[7]:
+# In[22]:
 
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
 comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed)
+
+print(comment)
 
 
 # # Import libraries
@@ -183,6 +185,8 @@ print("sum: ", train_size+ validation_size + test_size)
 print("initila distribution")
 initialClassesDistribution = countClasses(trainDataset, only_these_labels)
 
+print(initialClassesDistribution)
+
 # fig, ax = plt.subplots()
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
@@ -218,6 +222,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 print("balanced distribution")
 balancedClassesDistribution = countClasses(trainLoader, only_these_labels)
 
+print(balancedClassesDistribution)
 # fig, ax = plt.subplots()
 # ax.bar(x = np.arange(6), height = balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
@@ -231,7 +236,12 @@ balancedClassesDistribution = countClasses(trainLoader, only_these_labels)
 import os
 
 # create experiment's folder
-folder_path = ("/home/lbravo/thesis/work/thesis/experiments/" + number_experiment) if trainingOnGuanaco else ("/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment)
+tmpGuanaco = "/home/lbravo/thesis/work/thesis/"
+tmpLocal = "/home/leo/Desktop/thesis/work/thesis/"
+
+expPath = "experiments/" + number_experiment + "/seed" + str(seed)
+
+folder_path = (tmpGuanaco + expPath) if trainingOnGuanaco else (tmpLocal + expPath)
 # !mkdir folder_path
 # os.makedirs(os.path.dirname(folder_path), exist_ok=True)
 
@@ -240,23 +250,25 @@ if not(os.path.isdir(folder_path)):
         
     # create folder
     try:
-        os.mkdir(folder_path)
-    except OSError:
+        os.makedirs(folder_path)
+        
+    except OSError as error:
         print ("Creation of the directory %s failed" % folder_path)
+        print(error)
     else:
         print ("Successfully created the directory %s " % folder_path)
 else:
     print("folder already exists")
 
 # define paht to save model while training
-pathToSaveModel = "/home/lbravo/thesis/thesis/work/thesis/experiments/" + number_experiment + "/model" if trainingOnGuanaco else "/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/model"
+pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (tmpLocal + expPath + "/model")
 
 
 # In[13]:
 
 
 # store varibales on file
-text_file = open("../experiments/" + number_experiment + "/experimentParameters.txt", "w")
+text_file = open("../" + expPath + "/model" , "w")
 text = "N° experiment: {7}\n General comment: {13}\n Classes: {0}\n train_size: {9}\n validation_size: {10}\n test_size: {11}\n total dataset size: {12}\n Epochs: {8}\n Latent dimension: {1}\n Hidden dimension: {2}\n Input dimension: {3}\n Passband: {4}\n Learning rate: {5}\n Batch training size: {6}\n initial train classes distribution: {14}\nbalanced train class distribution: {15}".format(only_these_labels, latentDim, hiddenDim, inputDim, passband, learning_rate, batch_training_size, number_experiment, epochs, train_size, validation_size, test_size, train_size + validation_size + test_size, comment, initialClassesDistribution, balancedClassesDistribution)
 text_file.write(text)
 text_file.close()
@@ -476,7 +488,7 @@ for nepoch in range(epochs):
     if count_early_stop > threshold_early_stop:
         
         print("Early stopping in epoch: ", nepoch)
-        text_file = open("../experiments/" + number_experiment + "/earlyStopping.txt", "w")
+        text_file = open("../" + expPath + "/earlyStopping.txt", "w")
         metricsText = "Epoch: {0}\n ES counter: {1}\n, Reconstruction test error: {2}".format(nepoch, count_early_stop, epoch_test_loss)
         text_file.write(metricsText)
         text_file.close()
@@ -493,7 +505,7 @@ for nepoch in range(epochs):
         minTestLossGlobalSoFar = test_loss[nepoch]
         
         # save model
-        saveBestModel(model, pathToSaveModel, number_experiment, nepoch, minTestLossGlobalSoFar)
+        saveBestModel(model, pathToSaveModel, number_experiment, nepoch, minTestLossGlobalSoFar, expPath)
                 
    
 
@@ -501,14 +513,14 @@ for nepoch in range(epochs):
     # save losses
     print("saving losses")
     losses = np.asarray([train_loss, test_loss]).T
-    np.savetxt("../experiments/" + number_experiment + "/training_losses.csv", losses, delimiter=",")
+    np.savetxt("../" + expPath + "/training_losses.csv", losses, delimiter=",")
     
 
     
     
     # save f1 scores
     print("saving f1 scores")
-    np.savetxt("../experiments/" + number_experiment + "/f1Scores.csv", f1Scores, delimiter=",")
+    np.savetxt("../" + expPath + "/f1Scores.csv", f1Scores, delimiter=",")
 
     
     
@@ -520,11 +532,11 @@ print("training has finished")
 
 
 # get metrics on trainig dataset
-getConfusionAndClassificationReport(trainLoader, nameLabel = "Train", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment)
+getConfusionAndClassificationReport(trainLoader, nameLabel = "Train", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment, expPath = expPath)
 
 
 # get metrics on validation dataset
-getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment)
+getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment, expPath = expPath)
 
 
 # ### Stop execution if it's on cluster
@@ -541,13 +553,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[19]:
+# In[ ]:
 
 
 get_ipython().system('cat ../experiments/8/experimentParameters.txt')
 
 
-# In[21]:
+# In[ ]:
 
 
 # load losses array
@@ -579,13 +591,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[22]:
+# In[ ]:
 
 
 get_ipython().system('cat ../experiments/8/bestScoresModelTraining.txt')
 
 
-# In[23]:
+# In[ ]:
 
 
 # confusion matrix
@@ -600,21 +612,21 @@ print("Training")
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[24]:
+# In[ ]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[25]:
+# In[ ]:
 
 
 # classification report
 get_ipython().system('cat ../experiments/8/clasificationReportTrain.txt')
 
 
-# In[26]:
+# In[ ]:
 
 
 # classification report
