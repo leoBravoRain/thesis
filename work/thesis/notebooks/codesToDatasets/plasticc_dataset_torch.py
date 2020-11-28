@@ -93,7 +93,7 @@ def get_plasticc_datasets(path_to_plasticc, only_these_labels=None, lazy_loading
     
     # class counter
     classCounter = 0
-    classLimit = 300
+    classLimit = 80000
     
     for data_path in data_paths:
         print(f'Loading {data_path}')

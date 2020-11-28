@@ -28,11 +28,11 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 99
+number_experiment = 8
 number_experiment = str(number_experiment)
 
 # training
-epochs = 10
+epochs = 2000
 
 
 # In[2]:
