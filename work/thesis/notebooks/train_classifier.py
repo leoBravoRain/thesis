@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[19]:
+# In[1]:
 
 
 # training on guanaco
@@ -28,14 +28,14 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 9
+number_experiment = 99
 number_experiment = str(number_experiment)
 
 # training
 epochs = 1500
 
 
-# In[20]:
+# In[2]:
 
 
 # classes to analyze
@@ -66,14 +66,14 @@ passband = [0, 1, 2, 3, 4, 5]
 batch_training_size = 128
 
 
-# In[21]:
+# In[3]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[22]:
+# In[4]:
 
 
 # add general comment about experiment 
@@ -110,8 +110,8 @@ import math
 from torch import nn
 
 # local imports
-# %load_ext autoreload
-# %autoreload 2
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
 sys.path.append('../models')
 # from classifier import EncoderClassifier, 
 from classifierPrototype import EncoderClassifier
@@ -131,7 +131,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[7]:
+# In[32]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -141,25 +141,37 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels)
 
 
+# In[37]:
+
+
+assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
+print("dataset test ok")
+
+
 # # Spliting data (train/test)
 
-# In[8]:
+# In[33]:
 
 
 # Spliting the data
 
 # print(torch_dataset_lazy.__len__())
 
+totalSize = torch_dataset_lazy.__len__()
+
+totalSize = totalSize
+print(totalSize)
+
 # selecting train splitting
-train_size = int(0.8 * torch_dataset_lazy.__len__())
+train_size = int(0.8 * totalSize)
 #print(train_size)
 
 # getting test splitting
-validation_size = math.floor((torch_dataset_lazy.__len__() - train_size)/2)
+validation_size = math.floor((totalSize - train_size)/3)
 #print(validation_size)
 
 # getting test splitting
-test_size = torch_dataset_lazy.__len__() - train_size - validation_size
+test_size = totalSize - train_size - validation_size
 #print(test_size)
 
 # spliting the torch dataset
@@ -179,7 +191,7 @@ print("sum: ", train_size+ validation_size + test_size)
 
 # ## Create a dataloader
 
-# In[9]:
+# In[36]:
 
 
 print("initila distribution")
@@ -191,7 +203,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[10]:
+# In[13]:
 
 
 # # Create data loader (minibatches)
@@ -216,7 +228,7 @@ testLoader = torch.utils.data.DataLoader(testDataset)
 # trainLoader = torch.utils.data.DataLoader(torch_dataset_lazy, batch_size=256, shuffle=True, num_workers=0)
 
 
-# In[11]:
+# In[14]:
 
 
 print("balanced distribution")
@@ -228,9 +240,17 @@ print(balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
+# In[ ]:
+
+
+import sys
+
+sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
+
+
 # ## Load the path to save model while training
 
-# In[12]:
+# In[15]:
 
 
 import os
@@ -264,7 +284,7 @@ else:
 pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (tmpLocal + expPath + "/model")
 
 
-# In[13]:
+# In[16]:
 
 
 # store varibales on file
@@ -277,7 +297,7 @@ print("experiment parameters file created")
 
 # ## Defining parameters to Autoencoder
 
-# In[14]:
+# In[17]:
 
 
 # check number of parameters
@@ -301,7 +321,7 @@ model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_
 model = model.cuda()
 
 
-# In[15]:
+# In[18]:
 
 
 print(model)

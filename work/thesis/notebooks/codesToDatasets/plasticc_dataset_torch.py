@@ -5,6 +5,11 @@ import pandas as pd
 import torch
 from plasticc_create_lightcurves import make_lc_tensor
 
+
+from collections import Counter
+
+
+
 class PLAsTiCC_Torch_Dataset_Lazy(torch.utils.data.Dataset):
     """
     Dataset that loads light curves on-demand 
@@ -80,10 +85,16 @@ def get_plasticc_datasets(path_to_plasticc, only_these_labels=None, lazy_loading
         for mode in [False, True]:
             mask = df_meta[mode]["true_target"].isin(only_these_labels)
             df_meta[mode] = df_meta[mode].loc[mask]
+            
     data_paths = sorted(p.glob('plasticc_test_set_batch*.csv'))
     data_paths = list(p.glob('plasticc_train_lightcurves.csv')) + data_paths
     
     print(f'Found {len(data_paths)} csv files at given path')
+    
+    # class counter
+    classCounter = 0
+    classLimit = 300
+    
     for data_path in data_paths:
         print(f'Loading {data_path}')
         mode = 'test' in str(data_path) # Boolean mask
@@ -91,10 +102,23 @@ def get_plasticc_datasets(path_to_plasticc, only_these_labels=None, lazy_loading
         #lc_ids = df_data.index.unique().intersection(df_meta[mode].index)
         lc_ids = get_unique_indexes(data_path).intersection(df_meta[mode].index)
         if lazy_loading:
+            
+            # if class counter is greater or equal to limit, so do not considerate more smaples of that class                
             torch_datasets.append(PLAsTiCC_Torch_Dataset_Lazy(p / 'light_curves',
                                                               list(lc_ids), 
                                                               list(df_meta[mode]['true_target'].loc[lc_ids]), 
                                                               is_test=mode))
+            # class counter
+            classCounter += (df_meta[mode]['true_target'].loc[lc_ids] == 92).sum()
+            print("samples added of class 92: " + str(classCounter))
+                  
+#             print(classCounter)
+            if classCounter >= classLimit:
+                print("max number of samples per class for class. The samples will be " + str(classCounter))
+                
+                # stop adding more data
+                break
+            
         else:
             print(f'Loading {data_path}')
             df_data = pd.read_csv(data_path).set_index("object_id")
@@ -103,7 +127,6 @@ def get_plasticc_datasets(path_to_plasticc, only_these_labels=None, lazy_loading
                                                                list(df_meta[mode]['true_target'].loc[lc_ids]),
                                                                is_test=mode))
                      
-
     
     return torch.utils.data.ConcatDataset(torch_datasets)
     
