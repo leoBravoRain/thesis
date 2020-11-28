@@ -32,7 +32,7 @@ number_experiment = 99
 number_experiment = str(number_experiment)
 
 # training
-epochs = 1500
+epochs = 10
 
 
 # In[2]:
@@ -110,8 +110,8 @@ import math
 from torch import nn
 
 # local imports
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
+# %load_ext autoreload
+# %autoreload 2
 sys.path.append('../models')
 # from classifier import EncoderClassifier, 
 from classifierPrototype import EncoderClassifier
@@ -160,7 +160,7 @@ print("dataset test ok")
 totalSize = torch_dataset_lazy.__len__()
 
 totalSize = totalSize
-print(totalSize)
+# print(totalSize)
 
 # selecting train splitting
 train_size = int(0.8 * totalSize)
@@ -240,14 +240,6 @@ print(balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
-# In[ ]:
-
-
-import sys
-
-sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
-
-
 # ## Load the path to save model while training
 
 # In[15]:
@@ -288,7 +280,7 @@ pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (t
 
 
 # store varibales on file
-text_file = open("../" + expPath + "/model" , "w")
+text_file = open("../" + expPath + "/experimentParameters.txt" , "w")
 text = "N° experiment: {7}\n General comment: {13}\n Classes: {0}\n train_size: {9}\n validation_size: {10}\n test_size: {11}\n total dataset size: {12}\n Epochs: {8}\n Latent dimension: {1}\n Hidden dimension: {2}\n Input dimension: {3}\n Passband: {4}\n Learning rate: {5}\n Batch training size: {6}\n initial train classes distribution: {14}\nbalanced train class distribution: {15}".format(only_these_labels, latentDim, hiddenDim, inputDim, passband, learning_rate, batch_training_size, number_experiment, epochs, train_size, validation_size, test_size, train_size + validation_size + test_size, comment, initialClassesDistribution, balancedClassesDistribution)
 text_file.write(text)
 text_file.close()
