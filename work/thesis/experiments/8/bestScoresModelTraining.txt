@@ -1,2 +1,0 @@
-Epoch: 1997
- Reconstruction test error: 0.004408429475888336

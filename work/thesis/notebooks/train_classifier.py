@@ -23,12 +23,12 @@ trainingOnGuanaco = True
 trainWithJustPython = False
 
 # seed to generate same datasets
-seed = 0
+seed = 1
 
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 8
+number_experiment = 9
 number_experiment = str(number_experiment)
 
 # training
@@ -60,7 +60,7 @@ hiddenDim = 100
 inputDim = 72
 
 # band
-# passband = 5
+#passband = [5]
 passband = [0, 1, 2, 3, 4, 5]
 
 batch_training_size = 128
