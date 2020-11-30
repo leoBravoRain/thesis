@@ -1,0 +1,2 @@
+Epoch: 1946
+ Reconstruction test error: 0.004860384063856975

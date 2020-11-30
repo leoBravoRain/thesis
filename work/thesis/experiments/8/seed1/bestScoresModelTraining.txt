@@ -1,0 +1,2 @@
+Epoch: 1955
+ Reconstruction test error: 0.004950515714756013
