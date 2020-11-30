@@ -4,11 +4,7 @@ import numpy as np
 import pandas as pd
 import torch
 from plasticc_create_lightcurves import make_lc_tensor
-
-
 from collections import Counter
-
-
 
 class PLAsTiCC_Torch_Dataset_Lazy(torch.utils.data.Dataset):
     """
@@ -67,7 +63,7 @@ def get_unique_indexes(path, chunksize=100000):
         unique_idx = unique_idx.union(chunk.set_index("object_id").index.unique())
     return unique_idx
 
-def get_plasticc_datasets(path_to_plasticc, only_these_labels=None, lazy_loading=True):
+def get_plasticc_datasets(path_to_plasticc, only_these_labels=None, lazy_loading=True, max_elements_per_class=None):
     
     if lazy_loading:
         print("You have selected lazy loading. Light curves will be loaded ondemand from the harddrive")
@@ -85,48 +81,39 @@ def get_plasticc_datasets(path_to_plasticc, only_these_labels=None, lazy_loading
         for mode in [False, True]:
             mask = df_meta[mode]["true_target"].isin(only_these_labels)
             df_meta[mode] = df_meta[mode].loc[mask]
-            
+    # Limit big classes
+    if max_elements_per_class is not None:
+        c = Counter(df_meta[True]['true_target'])
+        big_classes = [elem for elem in c if c[elem] > max_elements_per_class]
+        for big_class in big_classes:
+            index_to_drop = df_meta[True].loc[df_meta[True]['true_target'] == big_class].index[max_elements_per_class:]
+            df_meta[True].drop(index_to_drop, inplace=True)
+            print("hi")
     data_paths = sorted(p.glob('plasticc_test_set_batch*.csv'))
     data_paths = list(p.glob('plasticc_train_lightcurves.csv')) + data_paths
     
     print(f'Found {len(data_paths)} csv files at given path')
-    
-    # class counter
-    classCounter = 0
-    classLimit = 80000
-    
     for data_path in data_paths:
         print(f'Loading {data_path}')
         mode = 'test' in str(data_path) # Boolean mask
         #df_data = pd.read_csv(data_path).set_index("object_id") # This still requires a lot of memory!!
         #lc_ids = df_data.index.unique().intersection(df_meta[mode].index)
         lc_ids = get_unique_indexes(data_path).intersection(df_meta[mode].index)
+        current_labels = list(df_meta[mode]['true_target'].loc[lc_ids])
         if lazy_loading:
-            
-            # if class counter is greater or equal to limit, so do not considerate more smaples of that class                
             torch_datasets.append(PLAsTiCC_Torch_Dataset_Lazy(p / 'light_curves',
                                                               list(lc_ids), 
-                                                              list(df_meta[mode]['true_target'].loc[lc_ids]), 
+                                                              current_labels, 
                                                               is_test=mode))
-            # class counter
-            classCounter += (df_meta[mode]['true_target'].loc[lc_ids] == 92).sum()
-            print("samples added of class 92: " + str(classCounter))
-                  
-#             print(classCounter)
-            if classCounter >= classLimit:
-                print("max number of samples per class for class. The samples will be " + str(classCounter))
-                
-                # stop adding more data
-                break
-            
         else:
             print(f'Loading {data_path}')
             df_data = pd.read_csv(data_path).set_index("object_id")
             torch_datasets.append(PLAsTiCC_Torch_Dataset_Eager(df_data.loc[lc_ids], 
                                                                list(lc_ids),
-                                                               list(df_meta[mode]['true_target'].loc[lc_ids]),
+                                                               current_labels,
                                                                is_test=mode))
                      
+
     
     return torch.utils.data.ConcatDataset(torch_datasets)
     
