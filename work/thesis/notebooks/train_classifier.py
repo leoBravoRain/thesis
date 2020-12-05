@@ -32,7 +32,7 @@ number_experiment = 9
 number_experiment = str(number_experiment)
 
 # training
-epochs = 2000
+epochs = 3000
 
 
 # In[2]:
@@ -138,7 +138,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # Light curves are tensors are now [bands, [mjd, flux, err, mask],
 # lc_data, lc_label, lc_plasticc_id                              
-torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels)
+torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = 50000)
 
 
 # In[37]:
