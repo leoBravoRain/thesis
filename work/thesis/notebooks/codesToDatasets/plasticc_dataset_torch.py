@@ -88,7 +88,6 @@ def get_plasticc_datasets(path_to_plasticc, only_these_labels=None, lazy_loading
         for big_class in big_classes:
             index_to_drop = df_meta[True].loc[df_meta[True]['true_target'] == big_class].index[max_elements_per_class:]
             df_meta[True].drop(index_to_drop, inplace=True)
-            print("hi")
     data_paths = sorted(p.glob('plasticc_test_set_batch*.csv'))
     data_paths = list(p.glob('plasticc_train_lightcurves.csv')) + data_paths
     
