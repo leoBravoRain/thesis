@@ -5,6 +5,22 @@ import torch
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 
+
+# get light curves ids
+def getLightCurvesIds(dataset):
+    
+    totalSize = dataset.__len__()
+    
+    ids = np.zeros(shape = (totalSize,))
+    targets = np.zeros(shape = (totalSize,))
+    
+    for idx, data in enumerate(dataset):
+        
+        targets[idx] = data[1]
+        ids[idx] = idx
+    
+    return ids, targets
+
 # count classes in dataloader
 # return array of counter of each class
 def countClasses(dataLoader, labels):

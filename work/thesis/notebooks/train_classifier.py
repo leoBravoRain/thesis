@@ -23,7 +23,7 @@ trainingOnGuanaco = True
 trainWithJustPython = False
 
 # seed to generate same datasets
-seed = 1
+seed = 0
 
 # number_experiment (this is just a name)
 # priors:
@@ -32,7 +32,7 @@ number_experiment = 9
 number_experiment = str(number_experiment)
 
 # training
-epochs = 3000
+epochs = 3
 
 
 # In[2]:
@@ -60,7 +60,7 @@ hiddenDim = 100
 inputDim = 72
 
 # band
-#passband = [5]
+# passband = 5
 passband = [0, 1, 2, 3, 4, 5]
 
 batch_training_size = 128
@@ -119,6 +119,8 @@ from classifierPrototype import EncoderClassifier
 sys.path.append("./aux/")
 from auxFunctions import *
 
+from sklearn.model_selection import train_test_split
+
 
 # # Load data
 
@@ -131,17 +133,17 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[32]:
+# In[7]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
 
 # Light curves are tensors are now [bands, [mjd, flux, err, mask],
 # lc_data, lc_label, lc_plasticc_id                              
-torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = 50000)
+torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = 10)
 
 
-# In[37]:
+# In[8]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -150,52 +152,110 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[33]:
+# In[9]:
 
 
-# Spliting the data
+# splitting the data
 
-# print(torch_dataset_lazy.__len__())
+# get light curves ids, targets
+ids, targets = getLightCurvesIds(torch_dataset_lazy)
+
+# test array shapes
+# assert len(targets) == torch_dataset_lazy.__len__()
+# print(ids, len(ids), targets, len(targets))
+# get light curves targets
+
+# split training
+trainIdx, tmpIdx = train_test_split(
+    ids,
+    test_size = 0.2,
+    shuffle = True,
+    stratify = targets,
+    random_state = seed
+)
+
+# float to int
+tmpIdx = tmpIdx.astype(int)
+
+# split val, test
+valIdx, testIdx = train_test_split(
+    tmpIdx,
+#     targets,
+    test_size = 0.5,
+    shuffle = True,
+    stratify = targets[tmpIdx],
+    random_state = seed
+)
+
+# float to int
+trainIdx = trainIdx.astype(int)
+valIdx = valIdx.astype(int)
+testIdx = testIdx.astype(int)
+
+
+# In[10]:
+
+
+# # analize classes distributino
+# fig, ax = plt.subplots(3, 1)
+
+# ax[0].hist(targets[trainIdx])
+# ax[1].hist(targets[valIdx])
+# ax[2].hist(targets[testIdx])
+
+
+# In[11]:
+
+
+# # Spliting the data
+
+# # print(torch_dataset_lazy.__len__())
 
 totalSize = torch_dataset_lazy.__len__()
 
-totalSize = totalSize
-# print(totalSize)
+# totalSize = totalSize
+# # print(totalSize)
 
 # selecting train splitting
-train_size = int(0.8 * totalSize)
+# train_size = int(0.8 * totalSize)
+train_size = trainIdx.shape[0]
 #print(train_size)
 
-# getting test splitting
-validation_size = math.floor((totalSize - train_size)/3)
-#print(validation_size)
+# # getting test splitting
+# validation_size = math.floor((totalSize - train_size)/3)
+validation_size = valIdx.shape[0]
+# #print(validation_size)
 
-# getting test splitting
-test_size = totalSize - train_size - validation_size
-#print(test_size)
+# # getting test splitting
+# test_size = totalSize - train_size - validation_size
+test_size = testIdx.shape[0]
+# #print(test_size)
 
-# spliting the torch dataset
-trainDataset, validationDataset,  testDataset = torch.utils.data.random_split(
-    torch_dataset_lazy, 
-    [train_size, validation_size, test_size],
+# # spliting the torch dataset
+# trainDataset, validationDataset,  testDataset = torch.utils.data.random_split(
+#     torch_dataset_lazy, 
+#     [train_size, validation_size, test_size],
     
-    # set seed
-    generator = torch.Generator().manual_seed(seed)
-)
+#     # set seed
+#     generator = torch.Generator().manual_seed(seed)
+# )
 
 print("train size:", train_size)
 print("validation size: ", validation_size)
 print("test size:", test_size)
-print("sum: ", train_size+ validation_size + test_size)
+totTmp = train_size+ validation_size + test_size
+print("sum: ", totTmp)
+assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the same"
 
 
 # ## Create a dataloader
 
-# In[36]:
+# In[12]:
 
 
 print("initila distribution")
-initialClassesDistribution = countClasses(trainDataset, only_these_labels)
+# initialClassesDistribution = countClasses(trainDataset, only_these_labels)
+initialClassesDistribution = np.unique(targets, return_counts=True)[1]
 
 print(initialClassesDistribution)
 
@@ -210,22 +270,39 @@ print(initialClassesDistribution)
 
 # training loader
 trainLoader = torch.utils.data.DataLoader(
-    trainDataset, 
+    torch_dataset_lazy, 
     batch_size = batch_training_size, 
     # to balance classes
-    sampler=ImbalancedDatasetSampler(trainDataset),
+    sampler=ImbalancedDatasetSampler(
+        torch_dataset_lazy, 
+        indices = trainIdx,
+#         indices = [0, 1, 2]
+    ),
 )
+
 
 # validation loader
 validationLoader = torch.utils.data.DataLoader(
-    validationDataset, 
+#     validationDataset, 
+    torch_dataset_lazy,
     batch_size= batch_training_size,  
-    num_workers = 4
+    num_workers = 4,
+    sampler = torch.utils.data.SubsetRandomSampler(
+        valIdx
+    ),
 )
 
 # # test loader
-testLoader = torch.utils.data.DataLoader(testDataset)
-# trainLoader = torch.utils.data.DataLoader(torch_dataset_lazy, batch_size=256, shuffle=True, num_workers=0)
+# testLoader = torch.utils.data.DataLoader(testDataset)
+testLoader = torch.utils.data.DataLoader(
+#     validationDataset, 
+    torch_dataset_lazy,
+#     batch_size= batch_training_size,  
+    num_workers = 4,
+    sampler = torch.utils.data.SubsetRandomSampler(
+        testIdx
+    ),
+)
 
 
 # In[14]:
@@ -321,7 +398,7 @@ print(model)
 
 # ### Training
 
-# In[16]:
+# In[19]:
 
 
 from sklearn.metrics import f1_score
@@ -540,7 +617,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[17]:
+# In[20]:
 
 
 # get metrics on trainig dataset
@@ -553,7 +630,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[18]:
+# In[21]:
 
 
 import sys
@@ -565,20 +642,20 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[ ]:
+# In[22]:
 
 
-get_ipython().system('cat ../experiments/8/experimentParameters.txt')
+get_ipython().system('cat ../experiments/99/seed0/experimentParameters.txt')
 
 
-# In[ ]:
+# In[23]:
 
 
 # load losses array
-losses = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/"+ number_experiment + "/training_losses.csv")
+losses = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/"+ number_experiment + "/seed" + str(seed) + "/training_losses.csv")
 
 # f1 scores
-f1Scores = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/"+ number_experiment + "/f1Scores.csv")
+f1Scores = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/seed" + str(seed) + "/f1Scores.csv")
 
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
@@ -603,13 +680,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[ ]:
+# In[24]:
 
 
-get_ipython().system('cat ../experiments/8/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/99/seed0/bestScoresModelTraining.txt')
 
 
-# In[ ]:
+# In[26]:
 
 
 # confusion matrix
@@ -617,30 +694,30 @@ import pandas as pd
 import seaborn as sn
 
 # get confusion matrix
-cmTrain = pd.read_csv('../experiments/' + number_experiment + '/confusionMatrixTrain.csv', header = None) 
-cmValidation = pd.read_csv('../experiments/' + number_experiment + '/confusionMatrixValidation.csv', header = None) 
+cmTrain = pd.read_csv('../experiments/' + number_experiment + "/seed" + str(seed) + '/confusionMatrixTrain.csv', header = None) 
+cmValidation = pd.read_csv('../experiments/' + number_experiment + "/seed" + str(seed) + '/confusionMatrixValidation.csv', header = None) 
 
 print("Training")
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[ ]:
+# In[27]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[ ]:
+# In[28]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/8/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/99/seed0/clasificationReportTrain.txt')
 
 
-# In[ ]:
+# In[29]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/8/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/99/seed0/clasificationReportValidation.txt')
 
