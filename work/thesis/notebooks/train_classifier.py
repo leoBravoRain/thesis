@@ -17,10 +17,10 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
-trainWithJustPython = False
+trainWithJustPython = True
 
 # seed to generate same datasets
 seed = 0
@@ -140,7 +140,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # Light curves are tensors are now [bands, [mjd, flux, err, mask],
 # lc_data, lc_label, lc_plasticc_id                              
-torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = 10)
+torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = 50000)
 
 
 # In[8]:
@@ -164,6 +164,7 @@ ids, targets = getLightCurvesIds(torch_dataset_lazy)
 # assert len(targets) == torch_dataset_lazy.__len__()
 # print(ids, len(ids), targets, len(targets))
 # get light curves targets
+print("# light curves ids: " + len(ids))
 
 # split training
 trainIdx, tmpIdx = train_test_split(
