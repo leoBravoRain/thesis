@@ -2,7 +2,7 @@
 #SBATCH -J Ejemplo
 #SBATCH --nodes=1
 #SBATCH --mem=10gb
-#SBATCH --tasks-per-node=2
+#SBATCH --tasks-per-node=4
 #SBATCH --gres=gpu:2
 #SBATCH --partition=intel
 
