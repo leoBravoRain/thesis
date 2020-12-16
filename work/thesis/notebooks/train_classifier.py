@@ -28,11 +28,14 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 9
+number_experiment = 99
 number_experiment = str(number_experiment)
 
 # training
 epochs = 3
+
+# cuda device
+cuda_device = 0
 
 
 # In[2]:
@@ -127,13 +130,19 @@ from sklearn.model_selection import train_test_split
 # In[6]:
 
 
+torch.cuda.device_count()
+
+
+# In[7]:
+
+
 # define path to dataset
 pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo/Downloads/plasticc_torch-master/"
 
 
 # ## Loading dataset with pytorch tool
 
-# In[7]:
+# In[8]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -143,7 +152,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = 50000)
 
 
-# In[8]:
+# In[9]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -152,7 +161,7 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[9]:
+# In[10]:
 
 
 # splitting the data
@@ -164,7 +173,7 @@ ids, targets = getLightCurvesIds(torch_dataset_lazy)
 # assert len(targets) == torch_dataset_lazy.__len__()
 # print(ids, len(ids), targets, len(targets))
 # get light curves targets
-print("# light curves ids: " + len(ids))
+print("# light curves ids: " + str(len(ids)))
 
 # split training
 trainIdx, tmpIdx = train_test_split(
@@ -194,18 +203,18 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[10]:
+# In[11]:
 
 
 # # analize classes distributino
-# fig, ax = plt.subplots(3, 1)
+fig, ax = plt.subplots(3, 1)
 
-# ax[0].hist(targets[trainIdx])
-# ax[1].hist(targets[valIdx])
-# ax[2].hist(targets[testIdx])
+ax[0].hist(targets[trainIdx])
+ax[1].hist(targets[valIdx])
+ax[2].hist(targets[testIdx])
 
 
-# In[11]:
+# In[12]:
 
 
 # # Spliting the data
@@ -251,7 +260,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[12]:
+# In[13]:
 
 
 print("initila distribution")
@@ -264,7 +273,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[13]:
+# In[14]:
 
 
 # # Create data loader (minibatches)
@@ -279,6 +288,12 @@ trainLoader = torch.utils.data.DataLoader(
         indices = trainIdx,
 #         indices = [0, 1, 2]
     ),
+    # each worker retrieve data from disk, so the data will be ready to be processed by main process. The main process should get the data from disk, so if workers > 0, the workers will get the data (not the main process)
+    num_workers = 4,
+    
+    # https://developer.nvidia.com/blog/how-optimize-data-transfers-cuda-cc/
+    # the dataloader loads the data in pinned memory (instead of pageable memory), avoiding one process (to transfer data from pageable memory to pinned memory, work done by CUDA driver)
+    pin_memory = True,
 )
 
 
@@ -288,6 +303,7 @@ validationLoader = torch.utils.data.DataLoader(
     torch_dataset_lazy,
     batch_size= batch_training_size,  
     num_workers = 4,
+    pin_memory = True,
     sampler = torch.utils.data.SubsetRandomSampler(
         valIdx
     ),
@@ -300,13 +316,14 @@ testLoader = torch.utils.data.DataLoader(
     torch_dataset_lazy,
 #     batch_size= batch_training_size,  
     num_workers = 4,
+    pin_memory = True,
     sampler = torch.utils.data.SubsetRandomSampler(
         testIdx
     ),
 )
 
 
-# In[14]:
+# In[15]:
 
 
 print("balanced distribution")
@@ -320,7 +337,7 @@ print(balancedClassesDistribution)
 
 # ## Load the path to save model while training
 
-# In[15]:
+# In[16]:
 
 
 import os
@@ -354,7 +371,7 @@ else:
 pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (tmpLocal + expPath + "/model")
 
 
-# In[16]:
+# In[17]:
 
 
 # store varibales on file
@@ -367,7 +384,7 @@ print("experiment parameters file created")
 
 # ## Defining parameters to Autoencoder
 
-# In[17]:
+# In[18]:
 
 
 # check number of parameters
@@ -388,10 +405,10 @@ num_classes = len(only_these_labels)
 model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim, num_classes = num_classes, passband = passband)
 
 # mdel to GPU
-model = model.cuda()
+model = model.cuda(cuda_device)
 
 
-# In[18]:
+# In[19]:
 
 
 print(model)
@@ -399,7 +416,7 @@ print(model)
 
 # ### Training
 
-# In[19]:
+# In[20]:
 
 
 from sklearn.metrics import f1_score
@@ -461,13 +478,13 @@ for nepoch in range(epochs):
     for data_ in trainLoader:
         
         data = data_[0]
-        labels = data_[1].cuda()
+        labels = data_[1].cuda(cuda_device)
 #         labels = data_[1]
         
         optimizer.zero_grad()
             
         # this take the deltas (time and magnitude)
-        data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
+        data = generateDeltas(data, passband).type(torch.FloatTensor).cuda(cuda_device)
 #         data = generateDeltas(data, passband).type(torch.FloatTensor)
 
 #         # testing tensor size 
@@ -482,7 +499,7 @@ for nepoch in range(epochs):
 #         print("test ok")
 
         # loss function
-        loss = lossFunction(outputs, mapLabels(labels, only_these_labels).cuda())
+        loss = lossFunction(outputs, mapLabels(labels, only_these_labels).cuda(cuda_device))
         
         # backpropagation
         loss.backward()
@@ -513,9 +530,9 @@ for nepoch in range(epochs):
     for data_ in validationLoader:
         
         data = data_[0]
-        labels = data_[1].cuda()
+        labels = data_[1].cuda(cuda_device)
         
-        data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
+        data = generateDeltas(data, passband).type(torch.FloatTensor).cuda(cuda_device)
         
         outputs = model.forward(data)
         
@@ -524,7 +541,7 @@ for nepoch in range(epochs):
 #         print("test ok")
 
         # loss function
-        loss = lossFunction(outputs, mapLabels(labels, only_these_labels).cuda())
+        loss = lossFunction(outputs, mapLabels(labels, only_these_labels).cuda(cuda_device))
     
         #  store minibatch loss value
         epoch_test_loss += loss.item()
@@ -618,7 +635,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[20]:
+# In[21]:
 
 
 # get metrics on trainig dataset
@@ -631,7 +648,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[21]:
+# In[22]:
 
 
 import sys
@@ -643,13 +660,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[22]:
+# In[ ]:
 
 
 get_ipython().system('cat ../experiments/99/seed0/experimentParameters.txt')
 
 
-# In[23]:
+# In[ ]:
 
 
 # load losses array
@@ -681,13 +698,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[24]:
+# In[ ]:
 
 
 get_ipython().system('cat ../experiments/99/seed0/bestScoresModelTraining.txt')
 
 
-# In[26]:
+# In[ ]:
 
 
 # confusion matrix
@@ -702,21 +719,21 @@ print("Training")
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[27]:
+# In[ ]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[28]:
+# In[ ]:
 
 
 # classification report
 get_ipython().system('cat ../experiments/99/seed0/clasificationReportTrain.txt')
 
 
-# In[29]:
+# In[ ]:
 
 
 # classification report
