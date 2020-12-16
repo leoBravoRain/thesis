@@ -17,10 +17,10 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
-trainWithJustPython = False
+trainWithJustPython = True
 
 # seed to generate same datasets
 seed = 0
@@ -28,14 +28,15 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 9
+number_experiment = 99
 number_experiment = str(number_experiment)
 
 # training
-epochs = 12000
+epochs = 3
 
 # cuda device
 cuda_device = 0
+cuda_device = "cuda:" + str(cuda_device)
 
 
 # In[2]:
@@ -405,7 +406,7 @@ num_classes = len(only_these_labels)
 model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim, num_classes = num_classes, passband = passband)
 
 # mdel to GPU
-model = model.cuda(cuda_device)
+model = model.to(device = cuda_device)
 
 
 # In[19]:
@@ -478,13 +479,13 @@ for nepoch in range(epochs):
     for data_ in trainLoader:
         
         data = data_[0]
-        labels = data_[1].cuda(cuda_device)
+        labels = data_[1].to(device = cuda_device)
 #         labels = data_[1]
         
         optimizer.zero_grad()
             
         # this take the deltas (time and magnitude)
-        data = generateDeltas(data, passband).type(torch.FloatTensor).cuda(cuda_device)
+        data = generateDeltas(data, passband).type(torch.FloatTensor).to(device = cuda_device)
 #         data = generateDeltas(data, passband).type(torch.FloatTensor)
 
 #         # testing tensor size 
@@ -499,7 +500,7 @@ for nepoch in range(epochs):
 #         print("test ok")
 
         # loss function
-        loss = lossFunction(outputs, mapLabels(labels, only_these_labels).cuda(cuda_device))
+        loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
         
         # backpropagation
         loss.backward()
@@ -530,9 +531,9 @@ for nepoch in range(epochs):
     for data_ in validationLoader:
         
         data = data_[0]
-        labels = data_[1].cuda(cuda_device)
+        labels = data_[1].to(device = cuda_device)
         
-        data = generateDeltas(data, passband).type(torch.FloatTensor).cuda(cuda_device)
+        data = generateDeltas(data, passband).type(torch.FloatTensor).to(device = cuda_device)
         
         outputs = model.forward(data)
         
@@ -541,7 +542,7 @@ for nepoch in range(epochs):
 #         print("test ok")
 
         # loss function
-        loss = lossFunction(outputs, mapLabels(labels, only_these_labels).cuda(cuda_device))
+        loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
     
         #  store minibatch loss value
         epoch_test_loss += loss.item()
@@ -663,7 +664,7 @@ if  trainingOnGuanaco or trainWithJustPython:
 # In[ ]:
 
 
-get_ipython().system('cat ../experiments/99/seed0/experimentParameters.txt')
+get_ipython().system('cat ../experiments/9/seed0/experimentParameters.txt')
 
 
 # In[ ]:
@@ -701,7 +702,7 @@ ax[1].plot(f1Scores)
 # In[ ]:
 
 
-get_ipython().system('cat ../experiments/99/seed0/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/9/seed0/bestScoresModelTraining.txt')
 
 
 # In[ ]:
@@ -730,12 +731,12 @@ sn.heatmap(cmValidation, annot = True)
 
 
 # classification report
-get_ipython().system('cat ../experiments/99/seed0/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/9/seed1/clasificationReportTrain.txt')
 
 
 # In[ ]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/99/seed0/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/9/seed1/clasificationReportValidation.txt')
 
