@@ -194,11 +194,15 @@ def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, sta
         predictions = np.append(predictions, prediction)
         labels_ = np.append(labels_, label)
 
-
-    cm = confusion_matrix(labels_, predictions)
-
-    print("saving confusion matrix scores")
-    np.savetxt("../" + expPath + "/confusionMatrix" + nameLabel + ".csv", cm, delimiter=",")
+    
+    normalizes = ["true", "pred", "all"]
+    for normalize in normalizes:
+        
+        cm = confusion_matrix(labels_, predictions, normalize = normalize)
+        
+        print("saving confusion matrix scores with normalize: " + normalize)
+        
+        np.savetxt("../" + expPath + "/confusionMatrix" + nameLabel + "_norm_" + normalize + ".csv", cm, delimiter=",")
 
 
     # classification report
