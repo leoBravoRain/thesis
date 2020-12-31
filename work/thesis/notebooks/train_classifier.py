@@ -17,10 +17,10 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = False
+trainingOnGuanaco = True
 
 # train without notebook
-trainWithJustPython = True
+trainWithJustPython = False
 
 # seed to generate same datasets
 seed = 0
@@ -28,11 +28,11 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 99
+number_experiment = 8
 number_experiment = str(number_experiment)
 
 # training
-epochs = 3
+epochs = 12000
 
 # cuda device
 cuda_device = 0
@@ -64,8 +64,8 @@ hiddenDim = 100
 inputDim = 72
 
 # band
-# passband = 5
-passband = [0, 1, 2, 3, 4, 5]
+passband = [5]
+#passband = [0, 1, 2, 3, 4, 5]
 
 batch_training_size = 128
 
@@ -82,7 +82,7 @@ learning_rate = 1e-3
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed)
+comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + cuda_device
 
 print(comment)
 
@@ -131,7 +131,7 @@ from sklearn.model_selection import train_test_split
 # In[6]:
 
 
-torch.cuda.device_count()
+print("device count: " , torch.cuda.device_count())
 
 
 # In[7]:
