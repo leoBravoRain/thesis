@@ -68,6 +68,8 @@ class EncoderClassifier(torch.nn.Module):
         # convolution 1
         # x -> conv -> act -> ouput
         # shape should be: [batch_size, number of ouput channels (64), length of output from convolution]
+        # this conv is applied to each channel, and then the ouput is for each output channel defined above.
+        # the parameters have this shape: (output channel, input channel, other paramter i don't knwo what is? But it's same as kernel, but i think it's the shape of parameter and for coincidence is the kernel size (by the combination of other parameters values)
         
         #conv to time
         # normal convolution
