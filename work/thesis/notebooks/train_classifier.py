@@ -350,7 +350,7 @@ print(balancedClassesDistribution)
 import os
 
 # create experiment's folder
-tmpGuanaco = "/home/lbravo/thesis/work/thesis/"
+tmpGuanaco = "/home/lbravo/thesis/thesis/work/thesis/"
 tmpLocal = "/home/leo/Desktop/thesis/work/thesis/"
 
 expPath = "experiments/" + number_experiment + "/seed" + str(seed)
