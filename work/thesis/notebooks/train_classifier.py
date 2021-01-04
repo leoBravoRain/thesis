@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = False
+trainingOnGuanaco = True
 
 # train without notebook
 trainWithJustPython = True
