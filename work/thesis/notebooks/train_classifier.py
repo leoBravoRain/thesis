@@ -28,15 +28,18 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 8
+number_experiment = 99
 number_experiment = str(number_experiment)
 
 # training
-epochs = 12000
+epochs = 10
 
 # cuda device
 cuda_device = 0
 cuda_device = "cuda:" + str(cuda_device)
+
+# max elements by class
+max_elements_per_class = 1000
 
 
 # In[2]:
@@ -64,8 +67,8 @@ hiddenDim = 100
 inputDim = 72
 
 # band
-passband = [5]
-#passband = [0, 1, 2, 3, 4, 5]
+# passband = 5
+passband = [0, 1, 2, 3, 4, 5]
 
 batch_training_size = 128
 
@@ -82,7 +85,7 @@ learning_rate = 1e-3
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + cuda_device
+comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed)
 
 print(comment)
 
@@ -131,14 +134,14 @@ from sklearn.model_selection import train_test_split
 # In[6]:
 
 
-print("device count: " , torch.cuda.device_count())
+torch.cuda.device_count()
 
 
 # In[7]:
 
 
 # define path to dataset
-pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo/Downloads/plasticc_torch-master/"
+pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo/Downloads/plasticData/"
 
 
 # ## Loading dataset with pytorch tool
@@ -150,7 +153,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # Light curves are tensors are now [bands, [mjd, flux, err, mask],
 # lc_data, lc_label, lc_plasticc_id                              
-torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = 50000)
+torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
 # In[9]:
@@ -415,9 +418,15 @@ model = model.to(device = cuda_device)
 print(model)
 
 
+# In[24]:
+
+
+model.load_state_dict(torch.load("../" + expPath + "/bestScoresModelTraining.txt"))
+
+
 # ### Training
 
-# In[20]:
+# In[21]:
 
 
 from sklearn.metrics import f1_score
@@ -636,7 +645,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[21]:
+# In[22]:
 
 
 # get metrics on trainig dataset
@@ -649,7 +658,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[22]:
+# In[23]:
 
 
 import sys
@@ -664,7 +673,7 @@ if  trainingOnGuanaco or trainWithJustPython:
 # In[ ]:
 
 
-get_ipython().system('cat ../experiments/9/seed0/experimentParameters.txt')
+get_ipython().system('cat ../experiments/9/seed1/experimentParameters.txt')
 
 
 # In[ ]:
@@ -702,7 +711,7 @@ ax[1].plot(f1Scores)
 # In[ ]:
 
 
-get_ipython().system('cat ../experiments/9/seed0/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/9/seed1/bestScoresModelTraining.txt')
 
 
 # In[ ]:
@@ -712,11 +721,16 @@ get_ipython().system('cat ../experiments/9/seed0/bestScoresModelTraining.txt')
 import pandas as pd
 import seaborn as sn
 
+# select normalization
+# norm = {‘true’, ‘pred’, ‘all’}
+normalization = "true"
+
 # get confusion matrix
-cmTrain = pd.read_csv('../experiments/' + number_experiment + "/seed" + str(seed) + '/confusionMatrixTrain.csv', header = None) 
-cmValidation = pd.read_csv('../experiments/' + number_experiment + "/seed" + str(seed) + '/confusionMatrixValidation.csv', header = None) 
+cmTrain = pd.read_csv('../experiments/' + number_experiment + "/seed" + str(seed) + '/confusionMatrixTrain_norm_' + normalization + '.csv', header = None) 
+cmValidation = pd.read_csv('../experiments/' + number_experiment + "/seed" + str(seed) + '/confusionMatrixValidation_norm_' + normalization + '.csv', header = None) 
 
 print("Training")
+print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
