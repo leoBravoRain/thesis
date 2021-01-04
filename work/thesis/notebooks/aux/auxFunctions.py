@@ -123,7 +123,7 @@ def generateDeltas(data, passBand):
 #     print("generate deltas flux shape: {0}".format(tmpDeltaMagnitude.shape))
     
     # delta errors
-    tmpDeltaMagError = data[:, passBand, 2, 1:] - data[:, passBand, 2, :-1]
+    tmpDeltaMagError = (data[:, passBand, 2, 1:]**2 - data[:, passBand, 2, :-1]**2)**0.5
     
     # delta mask
     tmpMask = generate_delta_mask(data[:, passBand, 3,:])
