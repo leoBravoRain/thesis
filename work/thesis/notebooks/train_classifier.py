@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[30]:
 
 
 # training on guanaco
@@ -45,10 +45,10 @@ max_elements_per_class = 25000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = True
+includeDeltaErrors = False
 
 
-# In[2]:
+# In[31]:
 
 
 # classes to analyze
@@ -79,19 +79,19 @@ passband = [0, 1, 2, 3, 4, 5]
 batch_training_size = 128
 
 
-# In[3]:
+# In[33]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[4]:
+# In[36]:
 
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed)
+comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors")
 
 print(comment)
 
