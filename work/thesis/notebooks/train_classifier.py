@@ -41,6 +41,9 @@ cuda_device = "cuda:" + str(cuda_device)
 # max elements by class
 max_elements_per_class = 1000
 
+# train with previous model
+trainWithPreviousModel = True
+
 
 # In[2]:
 
@@ -404,12 +407,18 @@ inputDim = inputDim
 
 num_classes = len(only_these_labels)
 
+if trainWithPreviousModel:
+    
+    # loadgin model
+    model = torch.load(pathToSaveModel).to(device = cuda_device)
+    
+else:
+    
+    # defining model
+    model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim, num_classes = num_classes, passband = passband)
 
-# defining model
-model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim, num_classes = num_classes, passband = passband)
-
-# mdel to GPU
-model = model.to(device = cuda_device)
+    # mdel to GPU
+    model = model.to(device = cuda_device)
 
 
 # In[19]:
@@ -418,16 +427,9 @@ model = model.to(device = cuda_device)
 print(model)
 
 
-# In[25]:
-
-
-# model.load_state_dict(torch.load(pathToSaveModel))
-# model = torch.load(pathToSaveModel)
-
-
 # ### Training
 
-# In[22]:
+# In[20]:
 
 
 from sklearn.metrics import f1_score
@@ -646,7 +648,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[23]:
+# In[21]:
 
 
 # get metrics on trainig dataset
@@ -659,7 +661,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[24]:
+# In[22]:
 
 
 import sys
