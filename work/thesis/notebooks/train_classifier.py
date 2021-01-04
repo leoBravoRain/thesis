@@ -28,18 +28,18 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 99
+number_experiment = 9
 number_experiment = str(number_experiment)
 
 # training
-epochs = 10
+epochs = 10000
 
 # cuda device
 cuda_device = 0
 cuda_device = "cuda:" + str(cuda_device)
 
 # max elements by class
-max_elements_per_class = 1000
+max_elements_per_class = 25000
 
 # train with previous model
 trainWithPreviousModel = False
