@@ -20,7 +20,7 @@
 trainingOnGuanaco = True
 
 # train without notebook
-trainWithJustPython = True
+trainWithJustPython = False
 
 # seed to generate same datasets
 seed = 0
@@ -42,7 +42,7 @@ cuda_device = "cuda:" + str(cuda_device)
 max_elements_per_class = 1000
 
 # train with previous model
-trainWithPreviousModel = True
+trainWithPreviousModel = False
 
 
 # In[2]:
@@ -410,7 +410,9 @@ num_classes = len(only_these_labels)
 if trainWithPreviousModel:
     
     # loadgin model
-    model = torch.load(pathToSaveModel).to(device = cuda_device)
+    model = torch.load(pathToSaveModel + ".txt").to(device = cuda_device)
+    
+    print("loading saved model")
     
 else:
     
@@ -419,6 +421,8 @@ else:
 
     # mdel to GPU
     model = model.to(device = cuda_device)
+    
+    print("creating model with default parameters")
 
 
 # In[19]:
