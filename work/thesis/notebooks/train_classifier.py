@@ -17,10 +17,10 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
-trainWithJustPython = False
+trainWithJustPython = True
 
 # seed to generate same datasets
 seed = 0
@@ -28,21 +28,24 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 9
+number_experiment = 99
 number_experiment = str(number_experiment)
 
 # training
-epochs = 10000
+epochs = 4
 
 # cuda device
 cuda_device = 0
 cuda_device = "cuda:" + str(cuda_device)
 
 # max elements by class
-max_elements_per_class = 25000
+max_elements_per_class = 1000
 
 # train with previous model
 trainWithPreviousModel = False
+
+# include delta errors
+includeDeltaErrors = True
 
 
 # In[2]:
@@ -417,7 +420,7 @@ if trainWithPreviousModel:
 else:
     
     # defining model
-    model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim, num_classes = num_classes, passband = passband)
+    model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim, num_classes = num_classes, passband = passband, includeDeltaErrors = includeDeltaErrors)
 
     # mdel to GPU
     model = model.to(device = cuda_device)
@@ -501,7 +504,7 @@ for nepoch in range(epochs):
         optimizer.zero_grad()
             
         # this take the deltas (time and magnitude)
-        data = generateDeltas(data, passband).type(torch.FloatTensor).to(device = cuda_device)
+        data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
 #         data = generateDeltas(data, passband).type(torch.FloatTensor)
 
 #         # testing tensor size 
@@ -509,7 +512,7 @@ for nepoch in range(epochs):
 #         print("test ok")
         
         # get model output
-        outputs = model.forward(data)
+        outputs = model.forward(data, includeDeltaErrors)
         
 #         # testing output shape size
 #         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
@@ -549,9 +552,10 @@ for nepoch in range(epochs):
         data = data_[0]
         labels = data_[1].to(device = cuda_device)
         
-        data = generateDeltas(data, passband).type(torch.FloatTensor).to(device = cuda_device)
-        
-        outputs = model.forward(data)
+#         data = generateDeltas(data, passband).type(torch.FloatTensor).to(device = cuda_device)
+        data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
+    
+        outputs = model.forward(data, includeDeltaErrors)
         
 #           # testing output shape size
 #         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
@@ -656,11 +660,11 @@ print("training has finished")
 
 
 # get metrics on trainig dataset
-getConfusionAndClassificationReport(trainLoader, nameLabel = "Train", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment, expPath = expPath)
+getConfusionAndClassificationReport(trainLoader, nameLabel = "Train", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment, expPath = expPath, includeDeltaErrors = includeDeltaErrors)
 
 
 # get metrics on validation dataset
-getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment, expPath = expPath)
+getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment, expPath = expPath, includeDeltaErrors = includeDeltaErrors)
 
 
 # ### Stop execution if it's on cluster
