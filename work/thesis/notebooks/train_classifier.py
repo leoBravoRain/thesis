@@ -421,7 +421,7 @@ print(model)
 # In[24]:
 
 
-model.load_state_dict(torch.load("../" + expPath + "/bestScoresModelTraining.txt"))
+# model.load_state_dict(torch.load("../" + expPath + "/bestScoresModelTraining.txt"))
 
 
 # ### Training
