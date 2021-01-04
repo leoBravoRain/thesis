@@ -160,7 +160,8 @@ def saveBestModel(model, pathToSaveModel, number_experiment, nepoch, newError, e
 #         print("new: ", newError)
 
     # save model
-    torch.save(model.state_dict(), pathToSaveModel)
+    # torch.save(model.state_dict(), pathToSaveModel)
+    torch.save(model, pathToSaveModel)
 
     # write metrics
     text_file = open("../" + expPath + "/bestScoresModelTraining.txt", "w")

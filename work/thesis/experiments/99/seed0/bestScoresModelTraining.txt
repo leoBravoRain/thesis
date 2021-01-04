@@ -1,2 +1,2 @@
 Epoch: 9
- Reconstruction test error: 0.014439642360761881
+ Reconstruction test error: 0.016383937219294105

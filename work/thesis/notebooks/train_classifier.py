@@ -17,10 +17,10 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
-trainWithJustPython = False
+trainWithJustPython = True
 
 # seed to generate same datasets
 seed = 0
@@ -418,15 +418,16 @@ model = model.to(device = cuda_device)
 print(model)
 
 
-# In[24]:
+# In[25]:
 
 
-# model.load_state_dict(torch.load("../" + expPath + "/bestScoresModelTraining.txt"))
+# model.load_state_dict(torch.load(pathToSaveModel))
+# model = torch.load(pathToSaveModel)
 
 
 # ### Training
 
-# In[21]:
+# In[22]:
 
 
 from sklearn.metrics import f1_score
@@ -645,7 +646,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[22]:
+# In[23]:
 
 
 # get metrics on trainig dataset
@@ -658,7 +659,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[23]:
+# In[24]:
 
 
 import sys
