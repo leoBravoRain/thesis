@@ -12,7 +12,7 @@ class EncoderClassifier(torch.nn.Module):
     
 
     # init method
-    def __init__(self, latent_dim, hidden_dim, input_dim, num_classes, passband):
+    def __init__(self, latent_dim, hidden_dim, input_dim, num_classes, passband, includeDeltaErrors = True):
     
     
         super(type(self), self).__init__()
@@ -40,7 +40,8 @@ class EncoderClassifier(torch.nn.Module):
 #         self.hidden1 = torch.nn.Linear(2144*2, hidden_dim)
 #         self.hidden1 = torch.nn.Linear(1088, hidden_dim)
 #         self.hidden1 = torch.nn.Linear(1632, hidden_dim)
-        self.hidden1 = torch.nn.Linear(768, hidden_dim)
+        
+        self.hidden1 = torch.nn.Linear(768 if includeDeltaErrors else 512, hidden_dim)
         
 #         self.hidden2 = torch.nn.Linear(hidden_dim, hidden_dim)
         
@@ -58,7 +59,7 @@ class EncoderClassifier(torch.nn.Module):
 #         self.activationLinear = torch.nn.ReLU()
 
     # forward method
-    def forward(self, x):
+    def forward(self, x, includeDeltaErrors = True):
         
         # input shape: [batch_size, channels, sequence_length]
 #         print("input shape: {0}".format(x.shape))
@@ -76,7 +77,7 @@ class EncoderClassifier(torch.nn.Module):
 #         outputTimeConv = self.activationConv(self.conv1(x[:, 0, :].unsqueeze(1)))
         # partial conv
 #         outputTimeConv, maskTime = self.pconv1(x[:, passband, 0, :].unsqueeze(1), x[:, passband, 3, :].unsqueeze(1))
-        outputTimeConv, maskTime = self.pconv1(x[:, :, 0, :], x[:, :, 3, :])
+        outputTimeConv, maskTime = self.pconv1(x[:, :, 0, :], x[:, :, -1, :])
         # activation function
         outputTimeConv = self.activationConv(outputTimeConv)
         
@@ -87,7 +88,7 @@ class EncoderClassifier(torch.nn.Module):
         
         # partial conv
         # output, newMask = pconv1(data, mask)
-        outputMagConv, maskMag = self.pconv1(x[:, :, 1, :], x[:, :, 3, :])
+        outputMagConv, maskMag = self.pconv1(x[:, :, 1, :], x[:, :, -1, :])
         # activation function
         outputMagConv = self.activationConv(outputMagConv)
         
@@ -97,9 +98,11 @@ class EncoderClassifier(torch.nn.Module):
         
         # partial conv
         # output, newMask = pconv1(data, mask)
-        outputMagErrorConv, maskError = self.pconv1(x[:, :, 2, :], x[:, :, 3, :])
-        # activation function
-        outputMagErrorConv = self.activationConv(outputMagErrorConv)
+        if includeDeltaErrors:
+            
+            outputMagErrorConv, maskError = self.pconv1(x[:, :, 2, :], x[:, :, -1, :])
+            # activation function
+            outputMagErrorConv = self.activationConv(outputMagErrorConv)
         
 #         print("output conv1 shape: {0}".format(outputMagConv.shape))
 #         print("output conv1 shape: {0}".format(outputTimeConv.shape))
@@ -123,11 +126,13 @@ class EncoderClassifier(torch.nn.Module):
         outputMagConv = self.activationConv(outputMagConv)
         
         # conv to mag error
-#         outputMagErrorConv = self.activationConv(self.conv2(outputMagErrorConv))
-        # partial conv
-        outputMagErrorConv, maskError = self.pconv2(outputMagErrorConv, maskError)
-        outputMagErrorConv = self.activationConv(outputMagErrorConv)
-        
+        if includeDeltaErrors:
+            
+    #         outputMagErrorConv = self.activationConv(self.conv2(outputMagErrorConv))
+            # partial conv
+            outputMagErrorConv, maskError = self.pconv2(outputMagErrorConv, maskError)
+            outputMagErrorConv = self.activationConv(outputMagErrorConv)
+
         
         # conv 3
         
@@ -143,10 +148,12 @@ class EncoderClassifier(torch.nn.Module):
         outputMagConv = self.activationConv(outputMagConv)
         
         # conv to mag error
-#         outputMagErrorConv = self.activationConv(self.conv2(outputMagErrorConv))
-        # partial conv
-        outputMagErrorConv, maskError = self.pconv3(outputMagErrorConv, maskError)
-        outputMagErrorConv = self.activationConv(outputMagErrorConv)
+        if includeDeltaErrors:
+            
+    #         outputMagErrorConv = self.activationConv(self.conv2(outputMagErrorConv))
+            # partial conv
+            outputMagErrorConv, maskError = self.pconv3(outputMagErrorConv, maskError)
+            outputMagErrorConv = self.activationConv(outputMagErrorConv)
         
         
         
@@ -159,15 +166,25 @@ class EncoderClassifier(torch.nn.Module):
         
         outputTimeConv = outputTimeConv.view(outputTimeConv.shape[0], -1)
         
-        outputMagErrorConv = outputMagErrorConv.view(outputMagErrorConv.shape[0], -1)
+        if includeDeltaErrors:
+            
+            outputMagErrorConv = outputMagErrorConv.view(outputMagErrorConv.shape[0], -1)
         
 #         print("output reshape: ", outputMagConv.shape)
 #         print("output reshape: ", outputTimeConv.shape)
                 
         # concatenate 3 towers
 #         output = torch.cat((outputMagConv, outputTimeConv), 1)
-        output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv), 1)
+        if includeDeltaErrors:
+        
+            output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv), 1)
+            
+        else:
+            
+            output = torch.cat((outputTimeConv, outputMagConv), 1)
+            
 #         print("concatenate output shape: ", output.shape)
+        
         
         # x -> hidden1 -> activation
 #         print("before linear layer: {0}".format(output.shape))

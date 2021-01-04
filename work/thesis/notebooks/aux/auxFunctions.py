@@ -107,7 +107,7 @@ def generate_delta_mask(mask):
 
 # function to generate delta time and flux
 # data = [batchSize, channels, [time, flux, err, mask], light curve samples]
-def generateDeltas(data, passBand):
+def generateDeltas(data, passBand,includeDeltaErrors = True):
     
     # work with delta time and magnitude
     
@@ -123,14 +123,26 @@ def generateDeltas(data, passBand):
 #     print("generate deltas flux shape: {0}".format(tmpDeltaMagnitude.shape))
     
     # delta errors
-    tmpDeltaMagError = (data[:, passBand, 2, 1:]**2 - data[:, passBand, 2, :-1]**2)**0.5
+    if includeDeltaErrors:
+        
+        tmpDeltaMagError = (data[:, passBand, 2, 1:]**2 - data[:, passBand, 2, :-1]**2)**0.5
     
     # delta mask
     tmpMask = generate_delta_mask(data[:, passBand, 3,:])
     
     # concatenate tensors
-    dataToUse = torch.cat((tmpDeltaTime.unsqueeze(2), tmpDeltaMagnitude.unsqueeze(2), tmpDeltaMagError.unsqueeze(2), tmpMask.unsqueeze(2)), 2)
-#     print("data to use shape: {0}".format(dataToUse.shape))
+    
+    # if add delta errors
+    if includeDeltaErrors:
+        
+        dataToUse = torch.cat((tmpDeltaTime.unsqueeze(2), tmpDeltaMagnitude.unsqueeze(2), tmpDeltaMagError.unsqueeze(2), tmpMask.unsqueeze(2)), 2)
+        
+    # if it does not add the delta errors
+    else:
+        
+        dataToUse = torch.cat((tmpDeltaTime.unsqueeze(2), tmpDeltaMagnitude.unsqueeze(2), tmpMask.unsqueeze(2)), 2)
+        
+    #     print("data to use shape: {0}".format(dataToUse.shape))
     
     # normalize data
     # this was commented because it considerate that delta is already a normalization
@@ -160,7 +172,7 @@ def saveBestModel(model, pathToSaveModel, number_experiment, nepoch, newError, e
 #         print("new: ", newError)
 
     # save model
-    # torch.save(model.state_dict(), pathToSaveModel)
+    # torch.save(state_dict(), pathToSaveModel)
     torch.save(model, pathToSaveModel + ".txt")
 
     # write metrics
@@ -172,7 +184,7 @@ def saveBestModel(model, pathToSaveModel, number_experiment, nepoch, newError, e
     
 
 # get confusion matrix and classification report
-def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, staticLabels, number_experiment, expPath):
+def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, staticLabels, number_experiment, expPath, includeDeltaErrors):
     
     # get y true and labels
     predictions = np.zeros(shape = (0,))
@@ -184,9 +196,9 @@ def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, sta
         data = data_[0].cuda()
         labels = data_[1].cuda()
 
-        data = generateDeltas(data, passband).type(torch.FloatTensor).cuda()
+        data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).cuda()
 
-        outputs = model.forward(data)
+        outputs = model.forward(data, includeDeltaErrors)
 
         prediction = torch.argmax(outputs, 1).cpu().numpy()
 
