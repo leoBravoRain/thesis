@@ -1,0 +1,1 @@
+This experiment was executed before these images with 10k epochs, but it did not converged, so I executed it again but with just 5 epochs (starting from the best last model)
