@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[30]:
+# In[48]:
 
 
 # training on guanaco
@@ -23,7 +23,7 @@ trainingOnGuanaco = True
 trainWithJustPython = False
 
 # seed to generate same datasets
-seed = 1
+seed = 0
 
 # number_experiment (this is just a name)
 # priors:
@@ -39,15 +39,16 @@ cuda_device = 0
 cuda_device = "cuda:" + str(cuda_device)
 
 # max elements by class
-max_elements_per_class = 7000
+max_elements_per_class = 15000
 
 # train with previous model
-trainWithPreviousModel = False
+trainWithPreviousModel = True
 
 # include delta errors
 includeDeltaErrors = False
 
-# In[31]:
+
+# In[49]:
 
 
 # classes to analyze
@@ -72,32 +73,32 @@ hiddenDim = 100
 inputDim = 72
 
 # band
-passband = [5]
-#passband = [0, 1, 2, 3, 4, 5]
+# passband = 5
+passband = [0, 1, 2, 3, 4, 5]
 
 batch_training_size = 128
 
 
-# In[33]:
+# In[50]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[36]:
+# In[51]:
 
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "exp " + number_experiment + " + encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors")
+comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors") + " + max by class " + str(max_elements_per_class)
 
 print(comment)
 
 
 # # Import libraries
 
-# In[5]:
+# In[31]:
 
 
 import pandas as pd
@@ -136,13 +137,7 @@ from sklearn.model_selection import train_test_split
 
 # # Load data
 
-# In[6]:
-
-
-torch.cuda.device_count()
-
-
-# In[7]:
+# In[32]:
 
 
 # define path to dataset
@@ -151,7 +146,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[8]:
+# In[33]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -161,7 +156,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
-# In[9]:
+# In[34]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -170,7 +165,7 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[10]:
+# In[35]:
 
 
 # splitting the data
@@ -212,7 +207,7 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[11]:
+# In[36]:
 
 
 # # analize classes distributino
@@ -223,7 +218,7 @@ ax[1].hist(targets[valIdx])
 ax[2].hist(targets[testIdx])
 
 
-# In[12]:
+# In[37]:
 
 
 # # Spliting the data
@@ -269,7 +264,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[13]:
+# In[38]:
 
 
 print("initila distribution")
@@ -282,7 +277,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[14]:
+# In[39]:
 
 
 # # Create data loader (minibatches)
@@ -332,7 +327,7 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[15]:
+# In[40]:
 
 
 print("balanced distribution")
@@ -346,7 +341,7 @@ print(balancedClassesDistribution)
 
 # ## Load the path to save model while training
 
-# In[16]:
+# In[41]:
 
 
 import os
@@ -393,7 +388,7 @@ print("experiment parameters file created")
 
 # ## Defining parameters to Autoencoder
 
-# In[18]:
+# In[42]:
 
 
 # check number of parameters
@@ -427,7 +422,7 @@ else:
     print("creating model with default parameters")
 
 
-# In[19]:
+# In[43]:
 
 
 print(model)
@@ -435,7 +430,7 @@ print(model)
 
 # ### Training
 
-# In[20]:
+# In[44]:
 
 
 from sklearn.metrics import f1_score
@@ -655,7 +650,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[21]:
+# In[45]:
 
 
 # get metrics on trainig dataset
@@ -680,13 +675,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[ ]:
+# In[46]:
 
 
-get_ipython().system('cat ../experiments/9/seed1/experimentParameters.txt')
+get_ipython().system('cat ../experiments/10/seed0/experimentParameters.txt')
 
 
-# In[ ]:
+# In[47]:
 
 
 # load losses array
@@ -718,13 +713,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[ ]:
+# In[10]:
 
 
-get_ipython().system('cat ../experiments/9/seed1/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/10/seed0/bestScoresModelTraining.txt')
 
 
-# In[ ]:
+# In[12]:
 
 
 # confusion matrix
@@ -744,23 +739,23 @@ print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[ ]:
+# In[13]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[ ]:
+# In[16]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/9/seed1/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/10/seed0/clasificationReportTrain.txt')
 
 
-# In[ ]:
+# In[17]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/9/seed1/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/10/seed0/clasificationReportValidation.txt')
 
