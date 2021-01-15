@@ -32,7 +32,7 @@ number_experiment = 10
 number_experiment = str(number_experiment)
 
 # training
-epochs = 10000
+epochs = 5
 
 # cuda device
 cuda_device = 0
