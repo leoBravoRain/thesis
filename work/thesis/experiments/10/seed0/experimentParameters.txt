@@ -1,5 +1,5 @@
-N° experiment: 9
- General comment: exp 9 + encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + 6 channels + seed 0 + include delta errors
+N° experiment: 10
+ General comment: exp 10 + encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + 6 channels + seed 0 + without delta errors
  Classes: [16, 92, 53, 88, 65, 6]
  train_size: 52360
  validation_size: 6545
@@ -13,4 +13,4 @@ N° experiment: 9
  Learning rate: 0.001
  Batch training size: 128
  initial train classes distribution: [ 1454 15924  1483 15981 15370 15239]
-balanced train class distribution: [8774. 8695. 8710. 8741. 8773. 8667.]
+balanced train class distribution: [8935. 8613. 8636. 8808. 8634. 8734.]

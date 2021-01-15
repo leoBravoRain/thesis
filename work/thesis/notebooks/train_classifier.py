@@ -23,12 +23,12 @@ trainingOnGuanaco = True
 trainWithJustPython = False
 
 # seed to generate same datasets
-seed = 0
+seed = 1
 
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 9
+number_experiment = 10
 number_experiment = str(number_experiment)
 
 # training
@@ -39,14 +39,13 @@ cuda_device = 0
 cuda_device = "cuda:" + str(cuda_device)
 
 # max elements by class
-max_elements_per_class = 25000
+max_elements_per_class = 7000
 
 # train with previous model
 trainWithPreviousModel = False
 
 # include delta errors
 includeDeltaErrors = False
-
 
 # In[31]:
 
@@ -73,8 +72,8 @@ hiddenDim = 100
 inputDim = 72
 
 # band
-# passband = 5
-passband = [0, 1, 2, 3, 4, 5]
+passband = [5]
+#passband = [0, 1, 2, 3, 4, 5]
 
 batch_training_size = 128
 
@@ -91,7 +90,7 @@ learning_rate = 1e-3
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors")
+comment = "exp " + number_experiment + " + encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors")
 
 print(comment)
 
