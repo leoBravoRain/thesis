@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[48]:
+# In[1]:
 
 
 # training on guanaco
@@ -32,23 +32,23 @@ number_experiment = 10
 number_experiment = str(number_experiment)
 
 # training
-epochs = 5
+epochs = 10000
 
 # cuda device
 cuda_device = 0
 cuda_device = "cuda:" + str(cuda_device)
 
 # max elements by class
-max_elements_per_class = 15000
+max_elements_per_class = 6000
 
 # train with previous model
-trainWithPreviousModel = True
+trainWithPreviousModel = False
 
 # include delta errors
 includeDeltaErrors = False
 
 
-# In[49]:
+# In[2]:
 
 
 # classes to analyze
@@ -79,14 +79,14 @@ passband = [0, 1, 2, 3, 4, 5]
 batch_training_size = 128
 
 
-# In[50]:
+# In[3]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[51]:
+# In[4]:
 
 
 # add general comment about experiment 
@@ -98,7 +98,7 @@ print(comment)
 
 # # Import libraries
 
-# In[31]:
+# In[5]:
 
 
 import pandas as pd
@@ -137,7 +137,7 @@ from sklearn.model_selection import train_test_split
 
 # # Load data
 
-# In[32]:
+# In[6]:
 
 
 # define path to dataset
@@ -146,7 +146,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[33]:
+# In[7]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -156,7 +156,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
-# In[34]:
+# In[8]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -165,7 +165,7 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[35]:
+# In[9]:
 
 
 # splitting the data
@@ -207,7 +207,7 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[36]:
+# In[10]:
 
 
 # # analize classes distributino
@@ -218,7 +218,7 @@ ax[1].hist(targets[valIdx])
 ax[2].hist(targets[testIdx])
 
 
-# In[37]:
+# In[11]:
 
 
 # # Spliting the data
@@ -264,7 +264,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[38]:
+# In[12]:
 
 
 print("initila distribution")
@@ -277,7 +277,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[39]:
+# In[13]:
 
 
 # # Create data loader (minibatches)
@@ -327,7 +327,7 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[40]:
+# In[14]:
 
 
 print("balanced distribution")
@@ -341,7 +341,7 @@ print(balancedClassesDistribution)
 
 # ## Load the path to save model while training
 
-# In[41]:
+# In[15]:
 
 
 import os
@@ -350,7 +350,7 @@ import os
 tmpGuanaco = "/home/lbravo/thesis/thesis/work/thesis/"
 tmpLocal = "/home/leo/Desktop/thesis/work/thesis/"
 
-expPath = "experiments/" + number_experiment + "/seed" + str(seed)
+expPath = "experiments/" + number_experiment + "/seed" + str(seed) + "/maxClass" + str(int(max_elements_per_class/1000)) + "k"
 
 folder_path = (tmpGuanaco + expPath) if trainingOnGuanaco else (tmpLocal + expPath)
 # !mkdir folder_path
@@ -375,7 +375,7 @@ else:
 pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (tmpLocal + expPath + "/model")
 
 
-# In[17]:
+# In[16]:
 
 
 # store varibales on file
@@ -388,7 +388,7 @@ print("experiment parameters file created")
 
 # ## Defining parameters to Autoencoder
 
-# In[42]:
+# In[17]:
 
 
 # check number of parameters
@@ -422,7 +422,7 @@ else:
     print("creating model with default parameters")
 
 
-# In[43]:
+# In[18]:
 
 
 print(model)
@@ -430,7 +430,7 @@ print(model)
 
 # ### Training
 
-# In[44]:
+# In[19]:
 
 
 from sklearn.metrics import f1_score
@@ -650,7 +650,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[45]:
+# In[20]:
 
 
 # get metrics on trainig dataset
@@ -663,7 +663,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[22]:
+# In[21]:
 
 
 import sys
@@ -675,20 +675,21 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[46]:
+# In[ ]:
 
 
-get_ipython().system('cat ../experiments/10/seed0/experimentParameters.txt')
+get_ipython().system('cat ../experiments/10/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[47]:
+# In[ ]:
 
 
 # load losses array
-losses = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/"+ number_experiment + "/seed" + str(seed) + "/training_losses.csv")
-
+# losses = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/"+ number_experiment + "/seed" + str(seed) + "/training_losses.csv")
+losses = pd.read_csv(tmpLocal + expPath + "/training_losses.csv")
 # f1 scores
-f1Scores = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/seed" + str(seed) + "/f1Scores.csv")
+# f1Scores = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/seed" + str(seed) + "/maxClass15k" + "/f1Scores.csv")
+f1Scores = pd.read_csv(tmpLocal + expPath + "/f1Scores.csv")
 
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
@@ -713,13 +714,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[10]:
+# In[ ]:
 
 
-get_ipython().system('cat ../experiments/10/seed0/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/10/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[12]:
+# In[ ]:
 
 
 # confusion matrix
@@ -731,31 +732,31 @@ import seaborn as sn
 normalization = "true"
 
 # get confusion matrix
-cmTrain = pd.read_csv('../experiments/' + number_experiment + "/seed" + str(seed) + '/confusionMatrixTrain_norm_' + normalization + '.csv', header = None) 
-cmValidation = pd.read_csv('../experiments/' + number_experiment + "/seed" + str(seed) + '/confusionMatrixValidation_norm_' + normalization + '.csv', header = None) 
+cmTrain = pd.read_csv(tmpLocal + expPath  + '/confusionMatrixTrain_norm_' + normalization + '.csv', header = None) 
+cmValidation = pd.read_csv(tmpLocal + expPath + '/confusionMatrixValidation_norm_' + normalization + '.csv', header = None) 
 
 print("Training")
 print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[13]:
+# In[ ]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[16]:
+# In[ ]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/10/seed0/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/10/seed0/maxClass15k/clasificationReportTrain.txt')
 
 
-# In[17]:
+# In[ ]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/10/seed0/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/10/seed0/maxClass15k/clasificationReportValidation.txt')
 
