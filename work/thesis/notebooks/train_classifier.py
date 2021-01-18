@@ -39,7 +39,7 @@ cuda_device = 0
 cuda_device = "cuda:" + str(cuda_device)
 
 # max elements by class
-max_elements_per_class = 6000
+max_elements_per_class = 1000
 
 # train with previous model
 trainWithPreviousModel = False
