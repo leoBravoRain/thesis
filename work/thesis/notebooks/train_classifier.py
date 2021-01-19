@@ -28,11 +28,11 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 9
+number_experiment = 10
 number_experiment = str(number_experiment)
 
 # training
-epochs = 10000
+epochs = 5
 
 # cuda device
 cuda_device = 0
@@ -45,7 +45,7 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = False
+includeDeltaErrors = True
 
 
 # In[2]:
