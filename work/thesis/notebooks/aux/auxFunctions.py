@@ -6,6 +6,24 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 import pickle
 
+# save ids before balancing
+def saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, path, lightCurvesIds):
+    
+    # get ids of light cur, ves
+    ids = {
+        "train": lightCurvesIds[trainIdx],
+        "validation": lightCurvesIds[valIdx],
+        "testing": lightCurvesIds[testIdx],
+        "message": "These are ids of light curves"
+    }
+
+    # save object
+    a_file = open(path + "/dataset_ids_before_balancing.pkl", "wb")
+    pickle.dump(ids, a_file)
+    a_file.close()
+
+    print("light curves ids saved on a file")
+    
 # save ids of dataset
 def getIds(dataLoader, dataLoaderSize):
 
@@ -24,19 +42,19 @@ def getIds(dataLoader, dataLoaderSize):
 
 
 # save object with ids of light curves
-def saveLightCurvesIds(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path):
+def saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path):
     
     # get ids of light cur, ves
     ids = {
 
         "train": getIds(trainLoader, train_size),
+        "validation": getIds(validationLoader, validation_size),
         "test": getIds(testLoader, test_size),
-        "validation": getIds(validationLoader, validation_size)
-
+        "message": "These are ids of light curves",
     }
 
     # save object
-    a_file = open(path + "/dataset_ids.pkl", "wb")
+    a_file = open(path + "/dataset_ids_after_balancing.pkl", "wb")
     pickle.dump(ids, a_file)
     a_file.close()
     
@@ -50,12 +68,16 @@ def getLightCurvesIds(dataset):
     ids = np.zeros(shape = (totalSize,))
     targets = np.zeros(shape = (totalSize,))
     
+    lightCurvesIds = np.zeros(shape = (totalSize,))
+    
     for idx, data in enumerate(dataset):
         
         targets[idx] = data[1]
         ids[idx] = idx
-    
-    return ids, targets
+#         print(data[2])
+        lightCurvesIds[idx] = data[2]
+        
+    return ids, targets, lightCurvesIds
 
 # count classes in dataloader
 # return array of counter of each class

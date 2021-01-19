@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[8]:
+# In[1]:
 
 
 # training on guanaco
@@ -48,7 +48,7 @@ trainWithPreviousModel = False
 includeDeltaErrors = False
 
 
-# In[9]:
+# In[2]:
 
 
 # classes to analyze
@@ -79,14 +79,14 @@ passband = [0, 1, 2, 3, 4, 5]
 batch_training_size = 128
 
 
-# In[10]:
+# In[3]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[11]:
+# In[4]:
 
 
 # add general comment about experiment 
@@ -98,7 +98,7 @@ print(comment)
 
 # # Import libraries
 
-# In[12]:
+# In[5]:
 
 
 import pandas as pd
@@ -137,7 +137,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[13]:
+# In[6]:
 
 
 import os
@@ -173,7 +173,7 @@ pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (t
 
 # # Load data
 
-# In[14]:
+# In[7]:
 
 
 # define path to dataset
@@ -182,7 +182,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[15]:
+# In[8]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -192,7 +192,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
-# In[16]:
+# In[9]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -201,13 +201,13 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[17]:
+# In[10]:
 
 
 # splitting the data
 
 # get light curves ids, targets
-ids, targets = getLightCurvesIds(torch_dataset_lazy)
+ids, targets, lightCurvesIds = getLightCurvesIds(torch_dataset_lazy)
 
 # test array shapes
 # assert len(targets) == torch_dataset_lazy.__len__()
@@ -243,7 +243,23 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[18]:
+# In[11]:
+
+
+# saving ids
+saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightCurvesIds)
+
+
+# In[12]:
+
+
+# # load ids dictionary
+# a_file = open(folder_path + "/dataset_ids_before_balancing.pkl", "rb")
+# output = pickle.load(a_file)
+# print(output)
+
+
+# In[13]:
 
 
 # # analize classes distributino
@@ -254,7 +270,7 @@ ax[1].hist(targets[valIdx])
 ax[2].hist(targets[testIdx])
 
 
-# In[19]:
+# In[14]:
 
 
 # # Spliting the data
@@ -300,7 +316,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[20]:
+# In[15]:
 
 
 print("initila distribution")
@@ -313,7 +329,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[21]:
+# In[16]:
 
 
 # # Create data loader (minibatches)
@@ -363,7 +379,7 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[22]:
+# In[17]:
 
 
 print("balanced distribution")
@@ -375,25 +391,25 @@ print(balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
-# In[31]:
+# In[18]:
 
 
 # save ids of dataset to use (train, test and validation)
-saveLightCurvesIds(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path = folder_path)
+saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path = folder_path)
 
 
-# In[35]:
+# In[28]:
 
 
 # # load ids dictionary
-# a_file = open(folder_path + "/dataset_ids.pkl", "rb")
+# a_file = open(folder_path + "/dataset_ids_after_balancing.pkl", "rb")
 # output = pickle.load(a_file)
-# print(output)
+# print(output["validation"])
 
 
 # ## Create experiment parameters file
 
-# In[24]:
+# In[20]:
 
 
 # store varibales on file
@@ -407,7 +423,7 @@ if trainingOnGuanaco or trainWithJustPython:
 
 # ## Defining parameters to Autoencoder
 
-# In[17]:
+# In[21]:
 
 
 # check number of parameters
@@ -441,7 +457,7 @@ else:
     print("creating model with default parameters")
 
 
-# In[18]:
+# In[22]:
 
 
 print(model)
@@ -449,7 +465,7 @@ print(model)
 
 # ### Training
 
-# In[19]:
+# In[23]:
 
 
 from sklearn.metrics import f1_score
@@ -669,7 +685,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[20]:
+# In[24]:
 
 
 # get metrics on trainig dataset
@@ -682,7 +698,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[21]:
+# In[25]:
 
 
 import sys
