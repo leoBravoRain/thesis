@@ -4,7 +4,43 @@ import torch
 # getting confusion amtrix
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
+import pickle
 
+# save ids of dataset
+def getIds(dataLoader, dataLoaderSize):
+
+    idsArray = np.zeros(shape = (dataLoaderSize))
+
+    lastIndex = 0
+
+    for idx, data in enumerate(dataLoader):
+
+        lastIndex_ = lastIndex + data[0].shape[0]
+        idsArray[lastIndex : lastIndex_] = data[2]
+
+        lastIndex = lastIndex_
+
+    return idsArray
+
+
+# save object with ids of light curves
+def saveLightCurvesIds(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path):
+    
+    # get ids of light cur, ves
+    ids = {
+
+        "train": getIds(trainLoader, train_size),
+        "test": getIds(testLoader, test_size),
+        "validation": getIds(validationLoader, validation_size)
+
+    }
+
+    # save object
+    a_file = open(path + "/dataset_ids.pkl", "wb")
+    pickle.dump(ids, a_file)
+    a_file.close()
+    
+    print("light curves ids saved on a file")
 
 # get light curves ids
 def getLightCurvesIds(dataset):

@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[8]:
 
 
 # training on guanaco
@@ -48,7 +48,7 @@ trainWithPreviousModel = False
 includeDeltaErrors = False
 
 
-# In[2]:
+# In[9]:
 
 
 # classes to analyze
@@ -79,26 +79,26 @@ passband = [0, 1, 2, 3, 4, 5]
 batch_training_size = 128
 
 
-# In[3]:
+# In[10]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[4]:
+# In[11]:
 
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "exp " + number_experiment + " encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors") + " + max by class " + str(max_elements_per_class)
+comment = "exp " + number_experiment + " + encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors") + " + max by class " + str(max_elements_per_class)
 
 print(comment)
 
 
 # # Import libraries
 
-# In[5]:
+# In[12]:
 
 
 import pandas as pd
@@ -137,7 +137,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[6]:
+# In[13]:
 
 
 import os
@@ -173,7 +173,7 @@ pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (t
 
 # # Load data
 
-# In[7]:
+# In[14]:
 
 
 # define path to dataset
@@ -182,7 +182,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[8]:
+# In[15]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -192,7 +192,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
-# In[9]:
+# In[16]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -201,7 +201,7 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[10]:
+# In[17]:
 
 
 # splitting the data
@@ -243,7 +243,7 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[11]:
+# In[18]:
 
 
 # # analize classes distributino
@@ -254,7 +254,7 @@ ax[1].hist(targets[valIdx])
 ax[2].hist(targets[testIdx])
 
 
-# In[12]:
+# In[19]:
 
 
 # # Spliting the data
@@ -300,7 +300,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[13]:
+# In[20]:
 
 
 print("initila distribution")
@@ -313,7 +313,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[14]:
+# In[21]:
 
 
 # # Create data loader (minibatches)
@@ -363,7 +363,7 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[15]:
+# In[22]:
 
 
 print("balanced distribution")
@@ -371,13 +371,29 @@ balancedClassesDistribution = countClasses(trainLoader, only_these_labels)
 
 print(balancedClassesDistribution)
 # fig, ax = plt.subplots()
-# ax.bar(x = np.arange(6), height = balancedClassesDistribution)
+# ax.bar(x = np.ar# return 0# return 0ange(6), height = balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
+
+
+# In[31]:
+
+
+# save ids of dataset to use (train, test and validation)
+saveLightCurvesIds(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path = folder_path)
+
+
+# In[35]:
+
+
+# # load ids dictionary
+# a_file = open(folder_path + "/dataset_ids.pkl", "rb")
+# output = pickle.load(a_file)
+# print(output)
 
 
 # ## Create experiment parameters file
 
-# In[16]:
+# In[24]:
 
 
 # store varibales on file
