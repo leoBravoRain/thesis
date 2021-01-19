@@ -28,7 +28,7 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 10
+number_experiment = 9
 number_experiment = str(number_experiment)
 
 # training
@@ -39,7 +39,7 @@ cuda_device = 0
 cuda_device = "cuda:" + str(cuda_device)
 
 # max elements by class
-max_elements_per_class = 1000
+max_elements_per_class = 15000
 
 # train with previous model
 trainWithPreviousModel = False
@@ -91,7 +91,7 @@ learning_rate = 1e-3
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors") + " + max by class " + str(max_elements_per_class)
+comment = "exp " + number_experiment + " encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors") + " + max by class " + str(max_elements_per_class)
 
 print(comment)
 
@@ -135,9 +135,45 @@ from auxFunctions import *
 from sklearn.model_selection import train_test_split
 
 
-# # Load data
+# ## Load the path to save model while training
 
 # In[6]:
+
+
+import os
+
+# create experiment's folder
+tmpGuanaco = "/home/lbravo/thesis/thesis/work/thesis/"
+tmpLocal = "/home/leo/Desktop/thesis/work/thesis/"
+
+expPath = "experiments/" + number_experiment + "/seed" + str(seed) + "/maxClass" + str(int(max_elements_per_class/1000)) + "k"
+
+folder_path = (tmpGuanaco + expPath) if trainingOnGuanaco else (tmpLocal + expPath)
+# !mkdir folder_path
+# os.makedirs(os.path.dirname(folder_path), exist_ok=True)
+
+# check if folder exists
+if not(os.path.isdir(folder_path)):
+        
+    # create folder
+    try:
+        os.makedirs(folder_path)
+        
+    except OSError as error:
+        print ("Creation of the directory %s failed" % folder_path)
+        print(error)
+    else:
+        print ("Successfully created the directory %s " % folder_path)
+else:
+    print("folder already exists")
+
+# define paht to save model while training
+pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (tmpLocal + expPath + "/model")
+
+
+# # Load data
+
+# In[7]:
 
 
 # define path to dataset
@@ -146,7 +182,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[7]:
+# In[8]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -156,7 +192,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
-# In[8]:
+# In[9]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -165,7 +201,7 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[9]:
+# In[10]:
 
 
 # splitting the data
@@ -207,7 +243,7 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[10]:
+# In[11]:
 
 
 # # analize classes distributino
@@ -218,7 +254,7 @@ ax[1].hist(targets[valIdx])
 ax[2].hist(targets[testIdx])
 
 
-# In[11]:
+# In[12]:
 
 
 # # Spliting the data
@@ -264,7 +300,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[12]:
+# In[13]:
 
 
 print("initila distribution")
@@ -277,7 +313,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[13]:
+# In[14]:
 
 
 # # Create data loader (minibatches)
@@ -327,7 +363,7 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[14]:
+# In[15]:
 
 
 print("balanced distribution")
@@ -339,51 +375,18 @@ print(balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
-# ## Load the path to save model while training
-
-# In[15]:
-
-
-import os
-
-# create experiment's folder
-tmpGuanaco = "/home/lbravo/thesis/thesis/work/thesis/"
-tmpLocal = "/home/leo/Desktop/thesis/work/thesis/"
-
-expPath = "experiments/" + number_experiment + "/seed" + str(seed) + "/maxClass" + str(int(max_elements_per_class/1000)) + "k"
-
-folder_path = (tmpGuanaco + expPath) if trainingOnGuanaco else (tmpLocal + expPath)
-# !mkdir folder_path
-# os.makedirs(os.path.dirname(folder_path), exist_ok=True)
-
-# check if folder exists
-if not(os.path.isdir(folder_path)):
-        
-    # create folder
-    try:
-        os.makedirs(folder_path)
-        
-    except OSError as error:
-        print ("Creation of the directory %s failed" % folder_path)
-        print(error)
-    else:
-        print ("Successfully created the directory %s " % folder_path)
-else:
-    print("folder already exists")
-
-# define paht to save model while training
-pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (tmpLocal + expPath + "/model")
-
+# ## Create experiment parameters file
 
 # In[16]:
 
 
 # store varibales on file
-text_file = open("../" + expPath + "/experimentParameters.txt" , "w")
-text = "N° experiment: {7}\n General comment: {13}\n Classes: {0}\n train_size: {9}\n validation_size: {10}\n test_size: {11}\n total dataset size: {12}\n Epochs: {8}\n Latent dimension: {1}\n Hidden dimension: {2}\n Input dimension: {3}\n Passband: {4}\n Learning rate: {5}\n Batch training size: {6}\n initial train classes distribution: {14}\nbalanced train class distribution: {15}".format(only_these_labels, latentDim, hiddenDim, inputDim, passband, learning_rate, batch_training_size, number_experiment, epochs, train_size, validation_size, test_size, train_size + validation_size + test_size, comment, initialClassesDistribution, balancedClassesDistribution)
-text_file.write(text)
-text_file.close()
-print("experiment parameters file created")
+if trainingOnGuanaco or trainWithJustPython:
+    text_file = open("../" + expPath + "/experimentParameters.txt" , "w")
+    text = "N° experiment: {7}\n General comment: {13}\n Classes: {0}\n train_size: {9}\n validation_size: {10}\n test_size: {11}\n total dataset size: {12}\n Epochs: {8}\n Latent dimension: {1}\n Hidden dimension: {2}\n Input dimension: {3}\n Passband: {4}\n Learning rate: {5}\n Batch training size: {6}\n initial train classes distribution: {14}\nbalanced train class distribution: {15}".format(only_these_labels, latentDim, hiddenDim, inputDim, passband, learning_rate, batch_training_size, number_experiment, epochs, train_size, validation_size, test_size, train_size + validation_size + test_size, comment, initialClassesDistribution, balancedClassesDistribution)
+    text_file.write(text)
+    text_file.close()
+    print("experiment parameters file created")
 
 
 # ## Defining parameters to Autoencoder
@@ -678,7 +681,7 @@ if  trainingOnGuanaco or trainWithJustPython:
 # In[ ]:
 
 
-get_ipython().system('cat ../experiments/10/seed0/maxClass15k/experimentParameters.txt')
+get_ipython().system('cat ../experiments/9/seed0/maxClass15k/experimentParameters.txt')
 
 
 # In[ ]:
@@ -717,7 +720,7 @@ ax[1].plot(f1Scores)
 # In[ ]:
 
 
-get_ipython().system('cat ../experiments/10/seed0/maxClass15k/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/9/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
 # In[ ]:
@@ -751,12 +754,12 @@ sn.heatmap(cmValidation, annot = True)
 
 
 # classification report
-get_ipython().system('cat ../experiments/10/seed0/maxClass15k/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/9/seed0/maxClass15k/clasificationReportTrain.txt')
 
 
 # In[ ]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/10/seed0/maxClass15k/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/9/seed0/maxClass15k/clasificationReportValidation.txt')
 
