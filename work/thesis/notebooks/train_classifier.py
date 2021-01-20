@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[27]:
 
 
 # training on guanaco
@@ -28,11 +28,11 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 10
+number_experiment = 9
 number_experiment = str(number_experiment)
 
 # training
-epochs = 100
+epochs = 15000
 
 # cuda device
 cuda_device = 0
@@ -45,7 +45,7 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = True
+includeDeltaErrors = False
 
 
 # In[2]:
@@ -465,7 +465,7 @@ print(model)
 
 # ### Training
 
-# In[40]:
+# In[23]:
 
 
 from sklearn.metrics import f1_score
@@ -549,14 +549,14 @@ for nepoch in range(epochs):
     
 #         print(np.any(torch.isnan(outputs).numpy()))
         
-        # data validation
-        if np.any(torch.isnan(outputs).cpu().numpy()) or np.any(torch.isinf(outputs).cpu().numpy()):
+#         # data validation
+#         if np.any(torch.isnan(outputs).cpu().numpy()) or np.any(torch.isinf(outputs).cpu().numpy()):
             
-            print("invalid input detected at iteration ", nepoch)
+#             print("invalid input detected at iteration ", nepoch)
             
-            print("data: ", data)
+#             print("data: ", data)
             
-            print("outputs: ", outputs)
+#             print("outputs ", outputs)
             
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
@@ -690,13 +690,13 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[36]:
+# In[24]:
 
 
 np.any(torch.isnan(outputs).cpu().numpy())
 
 
-# In[ ]:
+# In[25]:
 
 
 # get metrics on trainig dataset
@@ -709,7 +709,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[ ]:
+# In[26]:
 
 
 import sys
