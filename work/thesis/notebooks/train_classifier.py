@@ -524,8 +524,6 @@ for nepoch in range(epochs):
     ######## Train ###########
     epoch_train_loss = 0
     
-    print("training")
-    
     for data_ in trainLoader:
         
         data = data_[0]
@@ -556,11 +554,12 @@ for nepoch in range(epochs):
             
             print("invalid input detected at iteration ", nepoch)
             
+            print("data: ", data)
+            
+            print("outputs ": outputs)
             
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
-        
-        print("loss: ", loss)
         
         # backpropagation
         loss.backward()
@@ -571,12 +570,8 @@ for nepoch in range(epochs):
         # add loss value (of the currrent minibatch)
         epoch_train_loss += loss.item()
         
-        print("epoch train loss: ", epoch_train_loss)
-
     # get epoch loss value
     train_loss[nepoch] = epoch_train_loss / train_size
-    
-    print(train_loss[nepoch])
     
     
     ##### Validation ########
@@ -587,8 +582,6 @@ for nepoch in range(epochs):
     f1Score = 0
     
     batchCounter = 0
-    
-    print("validation")
     
     # minibatches
     for data_ in validationLoader:
@@ -608,12 +601,9 @@ for nepoch in range(epochs):
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
         
-        print("loss: ", loss)
-        
         #  store minibatch loss value
         epoch_test_loss += loss.item()
-        
-        print("epoch test loss: ", epoch_test_loss)
+
         # f1 score
         f1Score += f1_score(mapLabels(labels, only_these_labels).cpu().numpy(), torch.argmax(outputs, 1).cpu().numpy(), average = "micro")
         
@@ -623,12 +613,8 @@ for nepoch in range(epochs):
     # get epoch test loss value
     test_loss[nepoch] = epoch_test_loss / validation_size
     
-    print("test loss epoch: ", test_loss[nepoch])
-    
     # get epoch f1 score
     f1Scores[nepoch] = f1Score / batchCounter
-    
-    print("f1 score epoch", f1Scores[nepoch])
     
     # plot loss values
     # if it's not cluster
