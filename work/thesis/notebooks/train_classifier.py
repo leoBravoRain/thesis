@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = False
+trainingOnGuanaco = True
 
 # train without notebook
 trainWithJustPython = False
@@ -28,7 +28,7 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 99
+number_experiment = 10
 number_experiment = str(number_experiment)
 
 # training
@@ -556,7 +556,7 @@ for nepoch in range(epochs):
             
             print("data: ", data)
             
-            print("outputs ": outputs)
+            print("outputs: ", outputs)
             
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
