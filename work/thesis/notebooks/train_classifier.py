@@ -110,7 +110,7 @@ from torch.utils import data
 
 # from tqdm import tqdm_notebook
 
-get_ipython().run_line_magic('matplotlib', 'notebook')
+# %matplotlib notebook
 
 # import functions to load dataset
 import sys
