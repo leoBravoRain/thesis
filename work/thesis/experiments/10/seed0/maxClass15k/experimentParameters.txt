@@ -13,4 +13,4 @@ N° experiment: 10
  Learning rate: 0.001
  Batch training size: 128
  initial train classes distribution: [ 1454 15924  1483 15981 15370 15239]
-balanced train class distribution: [8631. 8856. 8723. 8763. 8723. 8664.]
+balanced train class distribution: [8814. 8688. 8723. 8743. 8679. 8713.]
