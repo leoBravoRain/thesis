@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[9]:
+# In[1]:
 
 
 # training on guanaco
@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
 trainWithJustPython = False
@@ -28,7 +28,7 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 10
+number_experiment = 99
 number_experiment = str(number_experiment)
 
 # training
@@ -48,7 +48,7 @@ trainWithPreviousModel = False
 includeDeltaErrors = True
 
 
-# In[10]:
+# In[2]:
 
 
 # classes to analyze
@@ -79,14 +79,14 @@ passband = [0, 1, 2, 3, 4, 5]
 batch_training_size = 128
 
 
-# In[11]:
+# In[3]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[12]:
+# In[4]:
 
 
 # add general comment about experiment 
@@ -98,7 +98,7 @@ print(comment)
 
 # # Import libraries
 
-# In[13]:
+# In[5]:
 
 
 import pandas as pd
@@ -137,7 +137,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[14]:
+# In[6]:
 
 
 import os
@@ -465,7 +465,7 @@ print(model)
 
 # ### Training
 
-# In[38]:
+# In[40]:
 
 
 from sklearn.metrics import f1_score
@@ -548,7 +548,15 @@ for nepoch in range(epochs):
 #         # testing output shape size
 #         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
 #         print("test ok")
-
+    
+#         print(np.any(torch.isnan(outputs).numpy()))
+        
+        # data validation
+        if np.any(torch.isnan(outputs).cpu().numpy()) or np.any(torch.isinf(outputs).cpu().numpy()):
+            
+            print("invalid input detected at iteration ", nepoch)
+            
+            
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
         
@@ -696,7 +704,13 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[24]:
+# In[36]:
+
+
+np.any(torch.isnan(outputs).cpu().numpy())
+
+
+# In[ ]:
 
 
 # get metrics on trainig dataset
@@ -709,7 +723,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[25]:
+# In[ ]:
 
 
 import sys
@@ -721,13 +735,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[7]:
+# In[ ]:
 
 
 get_ipython().system('cat ../experiments/10/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[15]:
+# In[ ]:
 
 
 # load losses array
@@ -760,13 +774,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[28]:
+# In[ ]:
 
 
 get_ipython().system('cat ../experiments/9/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[29]:
+# In[ ]:
 
 
 # confusion matrix
@@ -786,21 +800,21 @@ print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[30]:
+# In[ ]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[31]:
+# In[ ]:
 
 
 # classification report
 get_ipython().system('cat ../experiments/9/seed0/maxClass15k/clasificationReportTrain.txt')
 
 
-# In[32]:
+# In[ ]:
 
 
 # classification report
