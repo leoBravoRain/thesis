@@ -183,8 +183,8 @@ def generateDeltas(data, passBand,includeDeltaErrors = True):
     # delta errors
     if includeDeltaErrors:
         
-        # tmpDeltaMagError = ((data[:, passBand, 2, 1:]**2) - (data[:, passBand, 2, :-1]**2))**0.5
-        tmpDeltaMagError = data[:, passBand, 2, 1:]
+        tmpDeltaMagError = (((data[:, passBand, 2, 1:])**2) - (((data[:, passBand, 2, :-1])**2))**0.5
+        # tmpDeltaMagError = data[:, passBand, 2, 1:]
     
     # delta mask
     tmpMask = generate_delta_mask(data[:, passBand, 3,:])

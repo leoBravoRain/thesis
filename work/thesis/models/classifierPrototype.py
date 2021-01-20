@@ -53,10 +53,10 @@ class EncoderClassifier(torch.nn.Module):
 #         self.activationConv = torch.nn.Tanh()
     
         # this works well.(comparing with relu)
-        self.activationLinear = torch.nn.Tanh()
+        # self.activationLinear = torch.nn.Tanh()
 
         # this is getting nan values
-#         self.activationLinear = torch.nn.ReLU()
+        self.activationLinear = torch.nn.ReLU()
 
     # forward method
     def forward(self, x, includeDeltaErrors = True):
