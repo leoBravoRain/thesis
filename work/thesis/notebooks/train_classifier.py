@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[9]:
 
 
 # training on guanaco
@@ -28,11 +28,11 @@ seed = 0
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 9
+number_experiment = 10
 number_experiment = str(number_experiment)
 
 # training
-epochs = 10000
+epochs = 100
 
 # cuda device
 cuda_device = 0
@@ -45,10 +45,10 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = False
+includeDeltaErrors = True
 
 
-# In[2]:
+# In[10]:
 
 
 # classes to analyze
@@ -73,20 +73,20 @@ hiddenDim = 100
 inputDim = 72
 
 # band
-#passband = [5]
+# passband = 5
 passband = [0, 1, 2, 3, 4, 5]
 
 batch_training_size = 128
 
 
-# In[3]:
+# In[11]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[4]:
+# In[12]:
 
 
 # add general comment about experiment 
@@ -98,7 +98,7 @@ print(comment)
 
 # # Import libraries
 
-# In[5]:
+# In[13]:
 
 
 import pandas as pd
@@ -110,7 +110,7 @@ from torch.utils import data
 
 # from tqdm import tqdm_notebook
 
-# %matplotlib notebook
+get_ipython().run_line_magic('matplotlib', 'notebook')
 
 # import functions to load dataset
 import sys
@@ -137,7 +137,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[6]:
+# In[14]:
 
 
 import os
@@ -398,7 +398,7 @@ print(balancedClassesDistribution)
 saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path = folder_path)
 
 
-# In[28]:
+# In[19]:
 
 
 # # load ids dictionary
@@ -465,7 +465,7 @@ print(model)
 
 # ### Training
 
-# In[23]:
+# In[38]:
 
 
 from sklearn.metrics import f1_score
@@ -524,6 +524,8 @@ for nepoch in range(epochs):
     ######## Train ###########
     epoch_train_loss = 0
     
+    print("training")
+    
     for data_ in trainLoader:
         
         data = data_[0]
@@ -550,6 +552,8 @@ for nepoch in range(epochs):
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
         
+        print("loss: ", loss)
+        
         # backpropagation
         loss.backward()
         
@@ -559,11 +563,12 @@ for nepoch in range(epochs):
         # add loss value (of the currrent minibatch)
         epoch_train_loss += loss.item()
         
+        print("epoch train loss: ", epoch_train_loss)
 
     # get epoch loss value
     train_loss[nepoch] = epoch_train_loss / train_size
     
-    
+    print(train_loss[nepoch])
     
     
     ##### Validation ########
@@ -574,6 +579,8 @@ for nepoch in range(epochs):
     f1Score = 0
     
     batchCounter = 0
+    
+    print("validation")
     
     # minibatches
     for data_ in validationLoader:
@@ -592,10 +599,13 @@ for nepoch in range(epochs):
 
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
-    
+        
+        print("loss: ", loss)
+        
         #  store minibatch loss value
         epoch_test_loss += loss.item()
         
+        print("epoch test loss: ", epoch_test_loss)
         # f1 score
         f1Score += f1_score(mapLabels(labels, only_these_labels).cpu().numpy(), torch.argmax(outputs, 1).cpu().numpy(), average = "micro")
         
@@ -605,11 +615,12 @@ for nepoch in range(epochs):
     # get epoch test loss value
     test_loss[nepoch] = epoch_test_loss / validation_size
     
+    print("test loss epoch: ", test_loss[nepoch])
+    
     # get epoch f1 score
     f1Scores[nepoch] = f1Score / batchCounter
     
-    
-    
+    print("f1 score epoch", f1Scores[nepoch])
     
     # plot loss values
     # if it's not cluster
@@ -710,21 +721,21 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[ ]:
+# In[7]:
 
 
-get_ipython().system('cat ../experiments/9/seed0/maxClass15k/experimentParameters.txt')
+get_ipython().system('cat ../experiments/10/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[ ]:
+# In[15]:
 
 
 # load losses array
 # losses = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/"+ number_experiment + "/seed" + str(seed) + "/training_losses.csv")
-losses = pd.read_csv(tmpLocal + expPath + "/training_losses.csv")
+losses = pd.read_csv(folder_path + "/training_losses.csv")
 # f1 scores
 # f1Scores = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/seed" + str(seed) + "/maxClass15k" + "/f1Scores.csv")
-f1Scores = pd.read_csv(tmpLocal + expPath + "/f1Scores.csv")
+f1Scores = pd.read_csv(folder_path + "/f1Scores.csv")
 
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
@@ -749,13 +760,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[ ]:
+# In[28]:
 
 
 get_ipython().system('cat ../experiments/9/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[ ]:
+# In[29]:
 
 
 # confusion matrix
@@ -775,21 +786,21 @@ print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[ ]:
+# In[30]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[ ]:
+# In[31]:
 
 
 # classification report
 get_ipython().system('cat ../experiments/9/seed0/maxClass15k/clasificationReportTrain.txt')
 
 
-# In[ ]:
+# In[32]:
 
 
 # classification report
