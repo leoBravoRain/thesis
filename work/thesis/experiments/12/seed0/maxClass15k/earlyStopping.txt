@@ -1,0 +1,3 @@
+Epoch: 10
+ ES counter: 22
+, Reconstruction test error: 93.05260419845581
