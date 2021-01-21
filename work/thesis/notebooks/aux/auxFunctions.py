@@ -13,7 +13,7 @@ def saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, path, lightCurv
     ids = {
         "train": lightCurvesIds[trainIdx],
         "validation": lightCurvesIds[valIdx],
-        "testing": lightCurvesIds[testIdx],
+        "test": lightCurvesIds[testIdx],
         "message": "These are ids of light curves"
     }
 
@@ -106,7 +106,7 @@ class ImbalancedDatasetSampler(torch.utils.data.sampler.Sampler):
         callback_get_label func: a callback-like function which takes two arguments - dataset and index
     """
 
-    def __init__(self, dataset, indices=None, num_samples=None, callback_get_label=None):
+    def __init__(self, dataset, seed, indices=None, num_samples=None, callback_get_label=None):
 
         # if indices is not provided, 
         # all elements in the dataset will be considered
@@ -137,6 +137,8 @@ class ImbalancedDatasetSampler(torch.utils.data.sampler.Sampler):
                    for idx in self.indices]
         self.weights = torch.DoubleTensor(weights)
 
+        self.seed = seed
+        
     def _get_label(self, dataset, idx):  
         
         # edit this for work with this dataset
@@ -144,7 +146,11 @@ class ImbalancedDatasetSampler(torch.utils.data.sampler.Sampler):
 
     def __iter__(self):
         return (self.indices[i] for i in torch.multinomial(
-            self.weights, self.num_samples, replacement=True))
+            self.weights, 
+            self.num_samples, 
+            replacement=True,
+            generator = torch.Generator().manual_seed(self.seed)
+        ))
 
     def __len__(self):
         return self.num_samples

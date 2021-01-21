@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[27]:
+# In[1]:
 
 
 # training on guanaco
@@ -22,21 +22,17 @@ trainingOnGuanaco = True
 # train without notebook
 trainWithJustPython = False
 
-# seed to generate same datasets
-seed = 0
-
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 12
+number_experiment = 9
 number_experiment = str(number_experiment)
 
-# training
-epochs = 10000
+# seed to generate same datasets
+seed = 0
 
-# cuda device
-cuda_device = 0
-cuda_device = "cuda:" + str(cuda_device)
+# training
+epochs = 15000
 
 # max elements by class
 max_elements_per_class = 15000
@@ -45,11 +41,19 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = True
+includeDeltaErrors = False
+
+# band
+# passband = [5]
+passband = [0, 1, 2, 3, 4, 5]
 
 
 # In[2]:
 
+
+# cuda device
+cuda_device = 0
+cuda_device = "cuda:" + str(cuda_device)
 
 # classes to analyze
 # 42,  90,  16,  67,  62, 993,  92,  52,  88,  65, 991, 992,  15,
@@ -71,10 +75,6 @@ only_these_labels = [16, 92, 53, 88, 65, 6]
 latentDim = 100
 hiddenDim = 100
 inputDim = 72
-
-# band
-passband = [5]
-#passband = [0, 1, 2, 3, 4, 5]
 
 batch_training_size = 128
 
@@ -342,6 +342,7 @@ trainLoader = torch.utils.data.DataLoader(
     sampler=ImbalancedDatasetSampler(
         torch_dataset_lazy, 
         indices = trainIdx,
+        seed = seed
 #         indices = [0, 1, 2]
     ),
     # each worker retrieve data from disk, so the data will be ready to be processed by main process. The main process should get the data from disk, so if workers > 0, the workers will get the data (not the main process)
@@ -361,7 +362,8 @@ validationLoader = torch.utils.data.DataLoader(
     num_workers = 4,
     pin_memory = True,
     sampler = torch.utils.data.SubsetRandomSampler(
-        valIdx
+        valIdx,
+        generator = torch.Generator().manual_seed(seed)
     ),
 )
 
@@ -374,7 +376,8 @@ testLoader = torch.utils.data.DataLoader(
     num_workers = 4,
     pin_memory = True,
     sampler = torch.utils.data.SubsetRandomSampler(
-        testIdx
+        testIdx,
+        generator = torch.Generator().manual_seed(seed)
     ),
 )
 
@@ -693,12 +696,6 @@ print("training has finished")
 # In[24]:
 
 
-np.any(torch.isnan(outputs).cpu().numpy())
-
-
-# In[25]:
-
-
 # get metrics on trainig dataset
 getConfusionAndClassificationReport(trainLoader, nameLabel = "Train", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment, expPath = expPath, includeDeltaErrors = includeDeltaErrors)
 
@@ -709,7 +706,7 @@ getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", 
 
 # ### Stop execution if it's on cluster
 
-# In[26]:
+# In[25]:
 
 
 import sys
@@ -721,13 +718,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[ ]:
+# In[26]:
 
 
 get_ipython().system('cat ../experiments/10/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[ ]:
+# In[27]:
 
 
 # load losses array
@@ -760,13 +757,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[ ]:
+# In[28]:
 
 
 get_ipython().system('cat ../experiments/9/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[ ]:
+# In[29]:
 
 
 # confusion matrix
@@ -786,21 +783,21 @@ print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[ ]:
+# In[30]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[ ]:
+# In[31]:
 
 
 # classification report
 get_ipython().system('cat ../experiments/9/seed0/maxClass15k/clasificationReportTrain.txt')
 
 
-# In[ ]:
+# In[32]:
 
 
 # classification report
