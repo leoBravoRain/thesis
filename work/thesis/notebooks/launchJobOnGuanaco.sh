@@ -15,5 +15,5 @@ date
 gpu_ids=`/usr/local/bin/tarjeta_libre 1 ,`
 if [ ! -z ${gpu_ids} ]
 then
-  CUDA_VISIBLE_DEVICES=${gpu_ids} python -u get_results_guanaco.py
+  CUDA_VISIBLE_DEVICES=${gpu_ids} python -u train_classifier.py
 fi
