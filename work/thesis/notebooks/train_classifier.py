@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[35]:
 
 
 # training on guanaco
@@ -25,14 +25,14 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 12
+number_experiment = 9
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 0
+seed = 1
 
 # training
-epochs = 15000
+epochs = 10000
 
 # max elements by class
 max_elements_per_class = 15000
@@ -41,14 +41,14 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = True
+includeDeltaErrors = False
 
 # band
-passband = [5]
-#passband = [0, 1, 2, 3, 4, 5]
+# passband = [5]
+passband = [0, 1, 2, 3, 4, 5]
 
 
-# In[2]:
+# In[36]:
 
 
 # cuda device
@@ -78,15 +78,18 @@ inputDim = 72
 
 batch_training_size = 128
 
+# early stopping 
+threshold_early_stop = 1000
 
-# In[3]:
+
+# In[37]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[4]:
+# In[38]:
 
 
 # add general comment about experiment 
@@ -98,7 +101,7 @@ print(comment)
 
 # # Import libraries
 
-# In[5]:
+# In[40]:
 
 
 import pandas as pd
@@ -137,7 +140,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[6]:
+# In[41]:
 
 
 import os
@@ -508,9 +511,9 @@ if (not trainingOnGuanaco) or (not trainWithJustPython):
     
 
 # early stopping
-prior_test_error = 0
+# prior_test_error = 0
 count_early_stop = 0
-threshold_early_stop = 1000
+threshold_early_stop = threshold_early_stop
 
 
 print("starting the training")
@@ -634,33 +637,8 @@ for nepoch in range(epochs):
         fig.canvas.draw()
     
     
-    #### Early stopping #####
     
     
-    
-    # if new test loss is greater than the older one
-    count_early_stop += 1
-    if epoch_test_loss > prior_test_error:
-        count_early_stop += 1
-        print("early stopping counter: ", count_early_stop)
-    else: 
-        count_early_stop = 0
-    
-    # update prior test error
-    prior_test_error = epoch_test_loss
-    
-    # analyze early stopping
-    if count_early_stop > threshold_early_stop:
-        
-        print("Early stopping in epoch: ", nepoch)
-        text_file = open("../" + expPath + "/earlyStopping.txt", "w")
-        metricsText = "Epoch: {0}\n ES counter: {1}\n, Reconstruction test error: {2}".format(nepoch, count_early_stop, epoch_test_loss)
-        text_file.write(metricsText)
-        text_file.close()
-        break
-        
-        
-        
     #### Saving best model ####
     
     # if epoch test loss is smaller than global min
@@ -675,7 +653,7 @@ for nepoch in range(epochs):
    
 
 
-    # save losses
+    #### save losses ####
     print("saving losses")
     losses = np.asarray([train_loss, test_loss]).T
     np.savetxt("../" + expPath + "/training_losses.csv", losses, delimiter=",")
@@ -683,10 +661,37 @@ for nepoch in range(epochs):
 
     
     
-    # save f1 scores
+    ### save f1 scores ####
     print("saving f1 scores")
     np.savetxt("../" + expPath + "/f1Scores.csv", f1Scores, delimiter=",")
 
+    
+    
+    
+    #### Early stopping #####
+    # If minimum global validation error does not decrease in X epochs, so stop training
+    
+    
+    
+    # if new test loss is greater than the min valid error
+    if test_loss[nepoch] > minTestLossGlobalSoFar:
+        count_early_stop += 1
+        print("early stopping counter: ", count_early_stop)
+        
+    # if it is smaller
+    else: 
+        count_early_stop = 0
+    
+    # analyze early stopping
+    if count_early_stop >= threshold_early_stop:
+        
+        print("Early stopping in epoch: ", nepoch)
+        text_file = open("../" + expPath + "/earlyStopping.txt", "w")
+        metricsText = "Epoch: {0}\n ES counter: {1}\n".format(nepoch, count_early_stop)
+        text_file.write(metricsText)
+        text_file.close()
+        break
+        
     
     
 # final message
@@ -718,13 +723,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[26]:
+# In[42]:
 
 
 get_ipython().system('cat ../experiments/10/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[27]:
+# In[43]:
 
 
 # load losses array
@@ -757,13 +762,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[28]:
+# In[34]:
 
 
 get_ipython().system('cat ../experiments/9/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[29]:
+# In[ ]:
 
 
 # confusion matrix
@@ -783,23 +788,23 @@ print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[30]:
+# In[ ]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[31]:
+# In[ ]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/9/seed0/maxClass15k/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/99/seed0/maxClass15k/clasificationReportTrain.txt')
 
 
-# In[32]:
+# In[ ]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/9/seed0/maxClass15k/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/99/seed0/maxClass15k/clasificationReportValidation.txt')
 
