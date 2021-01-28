@@ -1,0 +1,4 @@
+I am not sure:
+- I think this is with wrong delta (first differences) and not with the new one.
+- This is with tanh () as activation function to fully connected.
+- I think this is without the definitive dataset
