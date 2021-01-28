@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[35]:
+# In[47]:
 
 
 # training on guanaco
@@ -25,14 +25,14 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 12
+number_experiment = 13
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 1
+seed = 0
 
 # training
-epochs = 10000
+epochs = 100000
 
 # max elements by class
 max_elements_per_class = 15000
@@ -44,11 +44,11 @@ trainWithPreviousModel = False
 includeDeltaErrors = True
 
 # band
-passband = [5]
-#passband = [0, 1, 2, 3, 4, 5]
+# passband = [5]
+passband = [0, 1, 2, 3, 4, 5]
 
 
-# In[36]:
+# In[48]:
 
 
 # cuda device
@@ -79,17 +79,17 @@ inputDim = 72
 batch_training_size = 128
 
 # early stopping 
-threshold_early_stop = 2000
+threshold_early_stop = 1000
 
 
-# In[37]:
+# In[49]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[38]:
+# In[50]:
 
 
 # add general comment about experiment 
@@ -101,7 +101,7 @@ print(comment)
 
 # # Import libraries
 
-# In[40]:
+# In[51]:
 
 
 import pandas as pd
@@ -140,7 +140,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[41]:
+# In[52]:
 
 
 import os
@@ -723,13 +723,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[42]:
+# In[53]:
 
 
-get_ipython().system('cat ../experiments/10/seed0/maxClass15k/experimentParameters.txt')
+get_ipython().system('cat ../experiments/12/seed1/maxClass15k/experimentParameters.txt')
 
 
-# In[43]:
+# In[54]:
 
 
 # load losses array
@@ -738,6 +738,8 @@ losses = pd.read_csv(folder_path + "/training_losses.csv")
 # f1 scores
 # f1Scores = pd.read_csv("/home/leo/Desktop/thesis/work/thesis/experiments/" + number_experiment + "/seed" + str(seed) + "/maxClass15k" + "/f1Scores.csv")
 f1Scores = pd.read_csv(folder_path + "/f1Scores.csv")
+
+print(folder_path)
 
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
@@ -762,13 +764,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[34]:
+# In[55]:
 
 
-get_ipython().system('cat ../experiments/9/seed0/maxClass15k/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/12/seed1/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[ ]:
+# In[56]:
 
 
 # confusion matrix
@@ -780,31 +782,32 @@ import seaborn as sn
 normalization = "true"
 
 # get confusion matrix
-cmTrain = pd.read_csv(tmpLocal + expPath  + '/confusionMatrixTrain_norm_' + normalization + '.csv', header = None) 
-cmValidation = pd.read_csv(tmpLocal + expPath + '/confusionMatrixValidation_norm_' + normalization + '.csv', header = None) 
+cmTrain = pd.read_csv(folder_path  + '/confusionMatrixTrain_norm_' + normalization + '.csv', header = None) 
+cmValidation = pd.read_csv(folder_path + '/confusionMatrixValidation_norm_' + normalization + '.csv', header = None) 
 
+print(folder_path)
 print("Training")
 print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[ ]:
+# In[57]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[ ]:
+# In[58]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/99/seed0/maxClass15k/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/12/seed1/maxClass15k/clasificationReportTrain.txt')
 
 
-# In[ ]:
+# In[59]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/99/seed0/maxClass15k/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/12/seed1/maxClass15k/clasificationReportValidation.txt')
 
