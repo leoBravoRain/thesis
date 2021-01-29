@@ -7,16 +7,19 @@ from sklearn.metrics import confusion_matrix
 import pickle
 
 # save ids before balancing
-def saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, path, lightCurvesIds):
+def saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, path, lightCurvesIds, labels):
     
     # get ids of light cur, ves
     ids = {
         "train": lightCurvesIds[trainIdx],
         "validation": lightCurvesIds[valIdx],
         "test": lightCurvesIds[testIdx],
-        "message": "These are ids of light curves"
+        "message": "These are ids of light curves",
+        "labels_train": labels[trainIdx],
+        "labels_validation": labels[valIdx],
+        "labels_test": labels[testIdx],
     }
-
+    
     # save object
     a_file = open(path + "/dataset_ids_before_balancing.pkl", "wb")
     pickle.dump(ids, a_file)
@@ -28,31 +31,47 @@ def saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, path, lightCurv
 def getIds(dataLoader, dataLoaderSize):
 
     idsArray = np.zeros(shape = (dataLoaderSize))
-
+    labelsArray = np.zeros(shape = (dataLoaderSize))
+    
     lastIndex = 0
 
     for idx, data in enumerate(dataLoader):
 
         lastIndex_ = lastIndex + data[0].shape[0]
         idsArray[lastIndex : lastIndex_] = data[2]
+        
+        labelsArray[lastIndex : lastIndex_] = data[1]
 
         lastIndex = lastIndex_
 
-    return idsArray
+    return idsArray, labelsArray
 
 
 # save object with ids of light curves
 def saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path):
     
+    # get ids and labels
+    trainIds, trainLabels = getIds(trainLoader, train_size)
+    validIds, validLabels = getIds(validationLoader, validation_size)
+    testIds, testLabels = getIds(testLoader, test_size)
+    
     # get ids of light cur, ves
     ids = {
 
-        "train": getIds(trainLoader, train_size),
-        "validation": getIds(validationLoader, validation_size),
-        "test": getIds(testLoader, test_size),
+        "train": trainIds,
+        "validation": validIds,
+        "test": testIds,
         "message": "These are ids of light curves",
+        "labels_train": trainLabels,
+        "labels_validation": validLabels,
+        "labels_test": testLabels,
     }
-
+    
+    #print(ids["train"].shape)
+    #print(ids["labels_train"].shape)
+    #print(ids["train"][:10])
+    #print(ids["labels_train"][:10])
+    
     # save object
     a_file = open(path + "/dataset_ids_after_balancing.pkl", "wb")
     pickle.dump(ids, a_file)
