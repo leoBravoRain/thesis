@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[20]:
+# In[1]:
 
 
 # training on guanaco
@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
 trainWithJustPython = False
@@ -48,7 +48,7 @@ includeDeltaErrors = False
 passband = [0, 1, 2, 3, 4, 5]
 
 
-# In[21]:
+# In[2]:
 
 
 # cuda device
@@ -82,14 +82,14 @@ batch_training_size = 128
 threshold_early_stop = 1000
 
 
-# In[22]:
+# In[3]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[23]:
+# In[4]:
 
 
 # add general comment about experiment 
@@ -101,7 +101,7 @@ print(comment)
 
 # # Import libraries
 
-# In[24]:
+# In[5]:
 
 
 import pandas as pd
@@ -126,8 +126,8 @@ import math
 from torch import nn
 
 # local imports
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
+# %load_ext autoreload
+# %autoreload 2
 sys.path.append('../models')
 # from classifier import EncoderClassifier, 
 from classifierPrototype import EncoderClassifier
@@ -140,7 +140,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[25]:
+# In[6]:
 
 
 import os
@@ -176,7 +176,7 @@ pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (t
 
 # # Load data
 
-# In[26]:
+# In[7]:
 
 
 # define path to dataset
@@ -185,7 +185,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[27]:
+# In[8]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -195,7 +195,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
-# In[28]:
+# In[9]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -204,7 +204,7 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[31]:
+# In[10]:
 
 
 # splitting the data
@@ -246,21 +246,21 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[32]:
+# In[11]:
 
 
 assert targets.shape == lightCurvesIds.shape 
 print("ok")
 
 
-# In[33]:
+# In[12]:
 
 
 # saving ids
 saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightCurvesIds, targets)
 
 
-# In[36]:
+# In[13]:
 
 
 # # load ids dictionary
@@ -269,18 +269,18 @@ saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightC
 # print(output)
 
 
-# In[37]:
+# In[14]:
 
 
-# # analize classes distributino
-fig, ax = plt.subplots(3, 1)
+# # # analize classes distributino
+# fig, ax = plt.subplots(3, 1)
 
-ax[0].hist(targets[trainIdx])
-ax[1].hist(targets[valIdx])
-ax[2].hist(targets[testIdx])
+# ax[0].hist(targets[trainIdx])
+# ax[1].hist(targets[valIdx])
+# ax[2].hist(targets[testIdx])
 
 
-# In[38]:
+# In[15]:
 
 
 # # Spliting the data
@@ -326,20 +326,20 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[39]:
+# In[16]:
 
 
-print("initila distribution")
-# initialClassesDistribution = countClasses(trainDataset, only_these_labels)
-initialClassesDistribution = np.unique(targets, return_counts=True)[1]
+# print("initila distribution")
+# # initialClassesDistribution = countClasses(trainDataset, only_these_labels)
+# initialClassesDistribution = np.unique(targets, return_counts=True)[1]
 
-print(initialClassesDistribution)
+# print(initialClassesDistribution)
 
 # fig, ax = plt.subplots()
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[40]:
+# In[17]:
 
 
 # # Create data loader (minibatches)
@@ -392,26 +392,26 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[41]:
+# In[18]:
 
 
-print("balanced distribution")
-balancedClassesDistribution = countClasses(trainLoader, only_these_labels)
+# print("balanced distribution")
+# balancedClassesDistribution = countClasses(trainLoader, only_these_labels)
 
-print(balancedClassesDistribution)
-# fig, ax = plt.subplots()
+# print(balancedClassesDistribution)
+# # fig, ax = plt.subplots()
 # ax.bar(x = np.ar# return 0# return 0ange(6), height = balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
-# In[52]:
+# In[19]:
 
 
 # save ids of dataset to use (train, test and validation)
 saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path = folder_path)
 
 
-# In[64]:
+# In[20]:
 
 
 # load ids dictionary
