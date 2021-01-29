@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[47]:
+# In[1]:
 
 
 # training on guanaco
@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 9
+number_experiment = 10
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
@@ -41,14 +41,14 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = False
+includeDeltaErrors = True
 
 # band
 # passband = [5]
 passband = [0, 1, 2, 3, 4, 5]
 
 
-# In[48]:
+# In[2]:
 
 
 # cuda device
@@ -82,14 +82,14 @@ batch_training_size = 128
 threshold_early_stop = 1000
 
 
-# In[49]:
+# In[3]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[50]:
+# In[4]:
 
 
 # add general comment about experiment 
@@ -101,7 +101,7 @@ print(comment)
 
 # # Import libraries
 
-# In[51]:
+# In[5]:
 
 
 import pandas as pd
@@ -140,7 +140,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[52]:
+# In[6]:
 
 
 import os
@@ -250,7 +250,7 @@ testIdx = testIdx.astype(int)
 
 
 # saving ids
-saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightCurvesIds)
+saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightCurvesIds, targets)
 
 
 # In[12]:
