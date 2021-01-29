@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 12
+number_experiment = 11
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
@@ -41,7 +41,7 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = True
+includeDeltaErrors = False
 
 # band
 passband = [5]
@@ -79,7 +79,7 @@ inputDim = 72
 batch_training_size = 128
 
 # early stopping 
-threshold_early_stop = 1000
+threshold_early_stop = 1500
 
 
 # In[3]:
