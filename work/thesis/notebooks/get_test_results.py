@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
 trainWithJustPython = False
@@ -117,7 +117,7 @@ from torch.utils import data
 
 # import functions to load dataset
 import sys
-sys.path.append("../codesToDatasets")
+sys.path.append("./codesToDatasets")
 from plasticc_dataset_torch import get_plasticc_datasets
 # from plasticc_plotting import plot_light_curve
 
@@ -128,11 +128,11 @@ from torch import nn
 # local imports
 # %load_ext autoreload
 # %autoreload 2
-sys.path.append('../../models')
+sys.path.append('../models')
 # from classifier import EncoderClassifier, 
 from classifierPrototype import EncoderClassifier
 
-sys.path.append("../aux/")
+sys.path.append("./aux/")
 from auxFunctions import *
 
 from sklearn.model_selection import train_test_split
@@ -552,14 +552,14 @@ results = {
 }
 
 # save object
-a_file = open("../../experiments/comparingModels/seed" + str(seed) + "/ownModel/testOwnModelPredictions.pkl", "wb")
+a_file = open("../experiments/comparingModels/seed" + str(seed) + "/ownModel/testOwnModelPredictions.pkl", "wb")
 pickle.dump(results, a_file)
 a_file.close()
 
 print("model predictions saved on a file")
 
 
-# In[32]:
+# In[28]:
 
 
 # load model
@@ -570,7 +570,7 @@ print("model predictions saved on a file")
 
 # ### Stop execution if it's on cluster
 
-# In[27]:
+# In[29]:
 
 
 import sys
