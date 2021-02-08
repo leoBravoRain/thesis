@@ -12,7 +12,7 @@ class EncoderClassifier(torch.nn.Module):
     
 
     # init method
-    def __init__(self, latent_dim, hidden_dim, input_dim, num_classes, passband, includeDeltaErrors = True):
+    def __init__(self, latent_dim, hidden_dim, input_dim, num_classes, passband, includeDeltaErrors = True, includeOtherFeatures = False):
     
     
         super(type(self), self).__init__()
@@ -41,7 +41,7 @@ class EncoderClassifier(torch.nn.Module):
 #         self.hidden1 = torch.nn.Linear(1088, hidden_dim)
 #         self.hidden1 = torch.nn.Linear(1632, hidden_dim)
         
-        self.hidden1 = torch.nn.Linear(768 if includeDeltaErrors else 512, hidden_dim)
+        self.hidden1 = torch.nn.Linear(((768 + 12) if includeOtherFeatures else 768) if includeDeltaErrors else 512, hidden_dim)
         
 #         self.hidden2 = torch.nn.Linear(hidden_dim, hidden_dim)
         
@@ -57,9 +57,14 @@ class EncoderClassifier(torch.nn.Module):
 
         # this is getting nan values
         self.activationLinear = torch.nn.ReLU()
+        
+        
+        self.includeOtherFeatures = includeOtherFeatures
 
     # forward method
-    def forward(self, x, includeDeltaErrors = True):
+    def forward(self, x, includeDeltaErrors = True, otherFeatures = None):
+        
+        # print(self.includeOtherFeatures)
         
         # input shape: [batch_size, channels, sequence_length]
 #         print("input shape: {0}".format(x.shape))
@@ -173,11 +178,20 @@ class EncoderClassifier(torch.nn.Module):
 #         print("output reshape: ", outputMagConv.shape)
 #         print("output reshape: ", outputTimeConv.shape)
                 
-        # concatenate 3 towers
+        # concatenate 3 towers + other features
 #         output = torch.cat((outputMagConv, outputTimeConv), 1)
         if includeDeltaErrors:
-        
-            output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv), 1)
+            
+#             print(outputTimeConv.shape, outputMagConv.shape,  outputMagErrorConv.shape, otherFeatures.shape)
+            
+            if self.includeOtherFeatures:
+            
+                output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv, otherFeatures), dim = 1)
+            
+            else:
+                
+                output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv), dim = 1)
+            
             
         else:
             
@@ -187,7 +201,8 @@ class EncoderClassifier(torch.nn.Module):
         
         
         # x -> hidden1 -> activation
-#         print("before linear layer: {0}".format(output.shape))
+        # print("before linear layer: {0}".format(output.shape))
+
         output = self.activationLinear(self.hidden1(output))
         # Should be an activiation function here?
 #         output = (self.hidden1(output))

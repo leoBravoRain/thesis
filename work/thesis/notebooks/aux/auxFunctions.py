@@ -7,6 +7,24 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 import pickle
 
+
+# add other features
+# data input: [ 128, 6, 4, 72 ] 
+# data input: [batch, channels, [time, flux, err, mask], light curves samples]
+def getOtherFeatures(data):
+        
+    # get means by channel
+    means = torch.mean(data[:, :, 1, :], axis = 2)
+
+    # get IQ
+    iq = torch.kthvalue(data[:, :, 1, :], int(0.75*data[0, 0, 1, :].shape[0]))[0] - torch.kthvalue(data[:, :, 1, :], int(0.25*data[0, 0, 1, :].shape[0]))[0]
+                
+    # concatenate data
+    # data shape: [128, 12] == [batch, 6 channels means, 6 channels iq]
+    concatenate = torch.tensor(np.concatenate((means, iq), axis = 1))
+    
+    return concatenate
+
 # save ids before balancing
 def saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, path, lightCurvesIds, labels):
     
@@ -269,7 +287,7 @@ def saveBestModel(model, pathToSaveModel, number_experiment, nepoch, newError, e
     
 
 # get confusion matrix and classification report
-def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, staticLabels, number_experiment, expPath, includeDeltaErrors):
+def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, staticLabels, number_experiment, expPath, includeDeltaErrors, includeOtherFeatures):
     
     # get y true and labels
     predictions = np.zeros(shape = (0,))
@@ -282,9 +300,14 @@ def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, sta
         labels = data_[1].cuda()
 
         data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).cuda()
-
-        outputs = model.forward(data, includeDeltaErrors)
-
+    
+        if includeOtherFeatures:
+            
+            otherFeatures = getOtherFeatures(data_[0]).cuda()
+        
+        # get model output
+        outputs = model.forward(data, includeDeltaErrors, otherFeatures)
+        
         prediction = torch.argmax(outputs, 1).cpu().numpy()
 
         label = mapLabels(labels, staticLabels).cpu().numpy()

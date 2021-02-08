@@ -25,11 +25,11 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 11
+number_experiment = 14
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 2
+seed = 0
 
 # training
 epochs = 100000
@@ -41,11 +41,15 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = False
+includeDeltaErrors = True
 
 # band
-passband = [5]
-#passband = [0, 1, 2, 3, 4, 5]
+# passband = [5]
+passband = [0, 1, 2, 3, 4, 5]
+
+
+# include ohter feautures
+includeOtherFeatures = True
 
 
 # In[2]:
@@ -79,7 +83,7 @@ inputDim = 72
 batch_training_size = 128
 
 # early stopping 
-threshold_early_stop = 1500
+threshold_early_stop = 2000
 
 
 # In[3]:
@@ -94,7 +98,7 @@ learning_rate = 1e-3
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "exp " + number_experiment + " + encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors") + " + max by class " + str(max_elements_per_class)
+comment = "exp " + number_experiment + " + encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors") + " + max by class " + str(max_elements_per_class) + " + " + ("" if includeOtherFeatures else "not") + " other features"
 
 print(comment)
 
@@ -126,8 +130,8 @@ import math
 from torch import nn
 
 # local imports
-# %load_ext autoreload
-# %autoreload 2
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
 sys.path.append('../models')
 # from classifier import EncoderClassifier, 
 from classifierPrototype import EncoderClassifier
@@ -455,7 +459,15 @@ if trainWithPreviousModel:
 else:
     
     # defining model
-    model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim, num_classes = num_classes, passband = passband, includeDeltaErrors = includeDeltaErrors)
+    model = EncoderClassifier(
+        latent_dim = latentDim, 
+        hidden_dim = hiddenDim, 
+        input_dim = inputDim, 
+        num_classes = num_classes, 
+        passband = passband, 
+        includeDeltaErrors = includeDeltaErrors,
+        includeOtherFeatures = includeOtherFeatures,
+    )
 
     # mdel to GPU
     model = model.to(device = cuda_device)
@@ -476,7 +488,7 @@ print(model)
 
 from sklearn.metrics import f1_score
 
-# optimizera
+# optimizeraa
 optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum = 0.5)
 
 # loss function
@@ -541,13 +553,20 @@ for nepoch in range(epochs):
         # this take the deltas (time and magnitude)
         data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
 #         data = generateDeltas(data, passband).type(torch.FloatTensor)
-
-#         # testing tensor size 
-#         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
-#         print("test ok")
+        
+        # add other features
+        # [batch size, features]
+#         if includeOtherFeatures:
+        if includeOtherFeatures:
+            
+            otherFeatures = getOtherFeatures(data_[0]).to(device = cuda_device)
+        
+# #         # testing tensor size 
+# #         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
+# #         print("test ok")
         
         # get model output
-        outputs = model.forward(data, includeDeltaErrors)
+        outputs = model.forward(data, includeDeltaErrors, otherFeatures)
         
 #         # testing output shape size
 #         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
@@ -598,7 +617,16 @@ for nepoch in range(epochs):
 #         data = generateDeltas(data, passband).type(torch.FloatTensor).to(device = cuda_device)
         data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
     
-        outputs = model.forward(data, includeDeltaErrors)
+        if includeOtherFeatures:
+            
+            otherFeatures = getOtherFeatures(data_[0]).to(device = cuda_device)
+        
+# #         # testing tensor size 
+# #         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
+# #         print("test ok")
+        
+        # get model output
+        outputs = model.forward(data, includeDeltaErrors, otherFeatures)
         
 #           # testing output shape size
 #         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
@@ -702,11 +730,30 @@ print("training has finished")
 
 
 # get metrics on trainig dataset
-getConfusionAndClassificationReport(trainLoader, nameLabel = "Train", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment, expPath = expPath, includeDeltaErrors = includeDeltaErrors)
+getConfusionAndClassificationReport(
+    trainLoader, 
+    nameLabel = "Train", 
+    passband = passband, 
+    model = model, 
+    staticLabels = only_these_labels, 
+    number_experiment = number_experiment, 
+    expPath = expPath, 
+    includeDeltaErrors = includeDeltaErrors, 
+    includeOtherFeatures = includeOtherFeatures
+)
 
 
 # get metrics on validation dataset
-getConfusionAndClassificationReport(validationLoader, nameLabel = "Validation", passband = passband, model = model, staticLabels = only_these_labels, number_experiment = number_experiment, expPath = expPath, includeDeltaErrors = includeDeltaErrors)
+getConfusionAndClassificationReport(validationLoader, 
+                                    nameLabel = "Validation", 
+                                    passband = passband, 
+                                    model = model, 
+                                    staticLabels = only_these_labels, 
+                                    number_experiment = number_experiment, 
+                                    expPath = expPath, 
+                                    includeDeltaErrors = includeDeltaErrors, 
+                                    includeOtherFeatures = includeOtherFeatures
+                                   )
 
 
 # ### Stop execution if it's on cluster
@@ -723,13 +770,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[53]:
+# In[ ]:
 
 
-get_ipython().system('cat ../experiments/12/seed1/maxClass15k/experimentParameters.txt')
+get_ipython().system('cat ../experiments/11/seed2/maxClass15k/experimentParameters.txt')
 
 
-# In[54]:
+# In[ ]:
 
 
 # load losses array
@@ -744,17 +791,19 @@ print(folder_path)
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
 
+maxPlot = 6850
+
 # loss
 ax[0].set_xlabel("N° epoch")
 ax[0].set_ylabel("Loss")
-ax[0].plot(losses.iloc[:, 0], label = "train")
-ax[0].plot(losses.iloc[:, 1], label = "validation")
+ax[0].plot(losses.iloc[:maxPlot, 0], label = "train")
+ax[0].plot(losses.iloc[:maxPlot, 1], label = "validation")
 ax[0].legend()
 
 # f1 scores
 ax[1].set_xlabel("N° epoch")
 ax[1].set_ylabel("F1 score")
-ax[1].plot(f1Scores)
+ax[1].plot(f1Scores.iloc[:maxPlot])
 
 # best model
 # values copied from the txt file
@@ -764,13 +813,13 @@ ax[1].plot(f1Scores)
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[55]:
+# In[ ]:
 
 
-get_ipython().system('cat ../experiments/12/seed1/maxClass15k/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/11/seed2/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[56]:
+# In[ ]:
 
 
 # confusion matrix
@@ -791,23 +840,23 @@ print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[57]:
+# In[ ]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[58]:
+# In[ ]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/12/seed1/maxClass15k/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/11/seed2/maxClass15k/clasificationReportTrain.txt')
 
 
-# In[59]:
+# In[ ]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/12/seed1/maxClass15k/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/11/seed2/maxClass15k/clasificationReportValidation.txt')
 
