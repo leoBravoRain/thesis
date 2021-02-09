@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[47]:
 
 
 # training on guanaco
@@ -29,7 +29,7 @@ number_experiment = 14
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 1
+seed = 0
 
 # training
 epochs = 100000
@@ -52,7 +52,7 @@ passband = [0, 1, 2, 3, 4, 5]
 includeOtherFeatures = True
 
 
-# In[2]:
+# In[48]:
 
 
 # cuda device
@@ -83,17 +83,17 @@ inputDim = 72
 batch_training_size = 128
 
 # early stopping 
-threshold_early_stop = 2000
+threshold_early_stop = 3000
 
 
-# In[3]:
+# In[49]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[4]:
+# In[50]:
 
 
 # add general comment about experiment 
@@ -483,7 +483,7 @@ print(model)
 
 # ### Training
 
-# In[23]:
+# In[46]:
 
 
 from sklearn.metrics import f1_score
@@ -553,21 +553,32 @@ for nepoch in range(epochs):
         # this take the deltas (time and magnitude)
         data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
 #         data = generateDeltas(data, passband).type(torch.FloatTensor)
-        
+            
         # add other features
         # [batch size, features]
 #         if includeOtherFeatures:
         if includeOtherFeatures:
             
             otherFeatures = getOtherFeatures(data_[0]).to(device = cuda_device)
-        
-# #         # testing tensor size 
+            
+#             print(np.any(torch.isnan(otherFeatures).cpu().numpy()))
+            
+            if np.any(torch.isnan(otherFeatures).cpu().numpy()):
+                
+                print(f"other features with nan values in epoch {nepoch}")
+            
+            # #         # testing tensor size 
 # #         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
 # #         print("test ok")
         
         # get model output
         outputs = model.forward(data, includeDeltaErrors, otherFeatures)
-        
+            
+        if np.any(torch.isnan(outputs).cpu().numpy()):
+                
+                print(f"outpues with nan values in epoch {nepoch}")
+                
+#         print(ouput)
 #         # testing output shape size
 #         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
 #         print("test ok")
@@ -585,6 +596,12 @@ for nepoch in range(epochs):
             
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
+            
+        if np.any(torch.isnan(loss).cpu().numpy()):
+                
+                print(f"loss with nan values in epoch {nepoch}")
+                
+#         print(loss)
         
         # backpropagation
         loss.backward()
@@ -758,7 +775,7 @@ getConfusionAndClassificationReport(validationLoader,
 
 # ### Stop execution if it's on cluster
 
-# In[25]:
+# In[ ]:
 
 
 import sys
@@ -770,13 +787,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[ ]:
+# In[27]:
 
 
-get_ipython().system('cat ../experiments/11/seed2/maxClass15k/experimentParameters.txt')
+get_ipython().system('cat ../experiments/99/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[ ]:
+# In[34]:
 
 
 # load losses array
@@ -791,7 +808,7 @@ print(folder_path)
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
 
-maxPlot = 6850
+maxPlot = 3000
 
 # loss
 ax[0].set_xlabel("N° epoch")
@@ -813,13 +830,13 @@ ax[1].plot(f1Scores.iloc[:maxPlot])
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[ ]:
+# In[29]:
 
 
-get_ipython().system('cat ../experiments/11/seed2/maxClass15k/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/99/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[ ]:
+# In[35]:
 
 
 # confusion matrix
@@ -840,23 +857,23 @@ print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[ ]:
+# In[36]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[ ]:
+# In[13]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/11/seed2/maxClass15k/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/14/seed0/maxClass15k/clasificationReportTrain.txt')
 
 
-# In[ ]:
+# In[14]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/11/seed2/maxClass15k/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/14/seed0/maxClass15k/clasificationReportValidation.txt')
 
