@@ -12,22 +12,42 @@ import pickle
 # data input: [ 128, 6, 4, 72 ] 
 # data input: [batch, channels, [time, flux, err, mask], light curves samples]
 def getOtherFeatures(data):
+    
+    # get means
+    means = torch.zeros(size = (data.shape[0], data.shape[1]))
+    
+    # iq
+    iqs = torch.zeros(size = (data.shape[0], data.shape[1]))
+    
+    # Each lc has a different lenght, so that's reason why it iterates over each channel and lc
+    for lc_id in np.arange(data.shape[0]):
         
-    # get means by channel
-    # output shape: [128, 6]
-    means = torch.mean(data[:, :, 1, :], axis = 2)
-    
-#     print(means.shape)
-    
-    # get IQ
-    # output shape: [128, 6]
-    iq = torch.kthvalue(data[:, :, 1, :], int(0.75*data[0, 0, 1, :].shape[0]))[0] - torch.kthvalue(data[:, :, 1, :], int(0.25*data[0, 0, 1, :].shape[0]))[0]
+        for channel in np.arange(6):
             
-#     print(iq.shape)
+            # get mask
+            mask = data[lc_id, channel, 3, :].type(torch.BoolTensor)
+            
+            # filter light curve
+            lc_masked = data[lc_id, channel, 1, mask]
+            
+            # get means
+            means[lc_id, channel] = torch.mean(lc_masked)
+        
+            # get IQ
+            # output shape: [128, 6]
+            # with small length values, the iq fails. It fails with length smaller or equal than 3
+            if lc_masked.shape[0] > 3:
+                
+                iqs[lc_id, channel] = torch.kthvalue(lc_masked, int(0.75*lc_masked.shape[0]))[0] - torch.kthvalue(lc_masked, int(0.25*lc_masked.shape[0]))[0]
+
+            else:
+                
+                print(f"lc smaller than 3. IQ value filled with 0")
+                
     
     # concatenate data
     # data shape: [128, 12] == [batch, 6 channels means + 6 channels iq]
-    concatenate = torch.tensor(np.concatenate((means, iq), axis = 1))
+    concatenate = torch.tensor(np.concatenate((means, iqs), axis = 1))
         
 #     print(concatenate.shape)
     
