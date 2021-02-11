@@ -14,14 +14,22 @@ import pickle
 def getOtherFeatures(data):
         
     # get means by channel
+    # output shape: [128, 6]
     means = torch.mean(data[:, :, 1, :], axis = 2)
-
+    
+#     print(means.shape)
+    
     # get IQ
+    # output shape: [128, 6]
     iq = torch.kthvalue(data[:, :, 1, :], int(0.75*data[0, 0, 1, :].shape[0]))[0] - torch.kthvalue(data[:, :, 1, :], int(0.25*data[0, 0, 1, :].shape[0]))[0]
-                
+            
+#     print(iq.shape)
+    
     # concatenate data
-    # data shape: [128, 12] == [batch, 6 channels means, 6 channels iq]
+    # data shape: [128, 12] == [batch, 6 channels means + 6 channels iq]
     concatenate = torch.tensor(np.concatenate((means, iq), axis = 1))
+        
+#     print(concatenate.shape)
     
     return concatenate
 

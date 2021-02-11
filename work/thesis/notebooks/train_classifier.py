@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[47]:
+# In[1]:
 
 
 # training on guanaco
@@ -52,7 +52,7 @@ passband = [0, 1, 2, 3, 4, 5]
 includeOtherFeatures = True
 
 
-# In[48]:
+# In[2]:
 
 
 # cuda device
@@ -86,14 +86,14 @@ batch_training_size = 128
 threshold_early_stop = 3000
 
 
-# In[49]:
+# In[3]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[50]:
+# In[4]:
 
 
 # add general comment about experiment 
@@ -142,9 +142,15 @@ from auxFunctions import *
 from sklearn.model_selection import train_test_split
 
 
+# In[6]:
+
+
+torch.__version__
+
+
 # ## Load the path to save model while training
 
-# In[6]:
+# In[7]:
 
 
 import os
@@ -180,7 +186,7 @@ pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (t
 
 # # Load data
 
-# In[7]:
+# In[8]:
 
 
 # define path to dataset
@@ -189,7 +195,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[8]:
+# In[9]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -199,7 +205,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
-# In[9]:
+# In[10]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -208,7 +214,7 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[10]:
+# In[11]:
 
 
 # splitting the data
@@ -250,14 +256,14 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[11]:
+# In[12]:
 
 
 # saving ids
 saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightCurvesIds, targets)
 
 
-# In[12]:
+# In[13]:
 
 
 # # load ids dictionary
@@ -266,7 +272,7 @@ saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightC
 # print(output)
 
 
-# In[13]:
+# In[14]:
 
 
 # # analize classes distributino
@@ -277,7 +283,7 @@ ax[1].hist(targets[valIdx])
 ax[2].hist(targets[testIdx])
 
 
-# In[14]:
+# In[15]:
 
 
 # # Spliting the data
@@ -323,7 +329,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[15]:
+# In[16]:
 
 
 print("initila distribution")
@@ -336,7 +342,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[16]:
+# In[17]:
 
 
 # # Create data loader (minibatches)
@@ -389,7 +395,7 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[17]:
+# In[18]:
 
 
 print("balanced distribution")
@@ -401,14 +407,14 @@ print(balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
-# In[18]:
+# In[19]:
 
 
 # save ids of dataset to use (train, test and validation)
 saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path = folder_path)
 
 
-# In[19]:
+# In[20]:
 
 
 # # load ids dictionary
@@ -419,7 +425,7 @@ saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size,
 
 # ## Create experiment parameters file
 
-# In[20]:
+# In[21]:
 
 
 # store varibales on file
@@ -433,7 +439,7 @@ if trainingOnGuanaco or trainWithJustPython:
 
 # ## Defining parameters to Autoencoder
 
-# In[21]:
+# In[22]:
 
 
 # check number of parameters
@@ -475,7 +481,7 @@ else:
     print("creating model with default parameters")
 
 
-# In[22]:
+# In[23]:
 
 
 print(model)
@@ -483,7 +489,7 @@ print(model)
 
 # ### Training
 
-# In[46]:
+# In[24]:
 
 
 from sklearn.metrics import f1_score
@@ -560,20 +566,27 @@ for nepoch in range(epochs):
         if includeOtherFeatures:
             
             otherFeatures = getOtherFeatures(data_[0]).to(device = cuda_device)
-            
+                
 #             print(np.any(torch.isnan(otherFeatures).cpu().numpy()))
             
             if np.any(torch.isnan(otherFeatures).cpu().numpy()):
                 
                 print(f"other features with nan values in epoch {nepoch}")
             
+            
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors, otherFeatures)
+            
+            
             # #         # testing tensor size 
 # #         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
 # #         print("test ok")
         
-        # get model output
-        outputs = model.forward(data, includeDeltaErrors, otherFeatures)
+        else:
             
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors)
+
         if np.any(torch.isnan(outputs).cpu().numpy()):
                 
                 print(f"outpues with nan values in epoch {nepoch}")
@@ -642,12 +655,17 @@ for nepoch in range(epochs):
 # #         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
 # #         print("test ok")
         
-        # get model output
-        outputs = model.forward(data, includeDeltaErrors, otherFeatures)
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors, otherFeatures)
         
 #           # testing output shape size
 #         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
 #         print("test ok")
+
+        else:
+        
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors)
 
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
@@ -743,7 +761,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[24]:
+# In[25]:
 
 
 # get metrics on trainig dataset
@@ -775,7 +793,7 @@ getConfusionAndClassificationReport(validationLoader,
 
 # ### Stop execution if it's on cluster
 
-# In[ ]:
+# In[26]:
 
 
 import sys
@@ -787,13 +805,13 @@ if  trainingOnGuanaco or trainWithJustPython:
 
 # # Analyzing training
 
-# In[27]:
+# In[ ]:
 
 
 get_ipython().system('cat ../experiments/99/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[34]:
+# In[ ]:
 
 
 # load losses array
@@ -808,7 +826,7 @@ print(folder_path)
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
 
-maxPlot = 3000
+maxPlot = 100
 
 # loss
 ax[0].set_xlabel("N° epoch")
@@ -830,13 +848,13 @@ ax[1].plot(f1Scores.iloc[:maxPlot])
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[29]:
+# In[ ]:
 
 
-get_ipython().system('cat ../experiments/99/seed0/maxClass15k/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/14/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[35]:
+# In[ ]:
 
 
 # confusion matrix
@@ -857,23 +875,23 @@ print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[36]:
+# In[ ]:
 
 
 print("Validation")
 sn.heatmap(cmValidation, annot = True)
 
 
-# In[13]:
+# In[ ]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/14/seed0/maxClass15k/clasificationReportTrain.txt')
+get_ipython().system('cat ../experiments/99/seed0/maxClass15k/clasificationReportTrain.txt')
 
 
-# In[14]:
+# In[ ]:
 
 
 # classification report
-get_ipython().system('cat ../experiments/14/seed0/maxClass15k/clasificationReportValidation.txt')
+get_ipython().system('cat ../experiments/99/seed0/maxClass15k/clasificationReportValidation.txt')
 
