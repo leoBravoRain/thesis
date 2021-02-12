@@ -7,6 +7,31 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 import pickle
 
+# to compute features
+from scipy.stats import chi2
+
+
+# computing Pvar
+def Pvar(magnitude, error):
+    """
+    Calculate the probability of a light curve to be variable.
+    """
+
+    #magnitude = data[0]
+    #error = data[1]
+
+#     print(magnitude)
+    
+#     print(error)
+    
+    mean_mag = np.mean(magnitude)
+    nepochs = float(len(magnitude))
+
+    chi = np.sum((magnitude - mean_mag)**2. / error**2.)
+    p_chi = chi2.cdf(chi, (nepochs-1))
+
+    return p_chi
+    
 
 # add other features
 # data input: [ 128, 6, 4, 72 ] 
@@ -19,6 +44,9 @@ def getOtherFeatures(data):
     # iq
     iqs = torch.zeros(size = (data.shape[0], data.shape[1]))
     
+#     # pvar 
+#     pvars = torch.zeros(size = (data.shape[0], data.shape[1]))
+    
     # Each lc has a different lenght, so that's reason why it iterates over each channel and lc
     for lc_id in np.arange(data.shape[0]):
         
@@ -30,6 +58,9 @@ def getOtherFeatures(data):
             # filter light curve
             lc_masked = data[lc_id, channel, 1, mask]
             
+#             # get pvars 
+#             pvars[lc_id, channel] = Pvar(lc_masked.numpy(), data[lc_id, channel, 2, mask].numpy())
+            
             # get means
             means[lc_id, channel] = torch.mean(lc_masked)
         
@@ -40,15 +71,16 @@ def getOtherFeatures(data):
                 
                 iqs[lc_id, channel] = torch.kthvalue(lc_masked, int(0.75*lc_masked.shape[0]))[0] - torch.kthvalue(lc_masked, int(0.25*lc_masked.shape[0]))[0]
 
-            else:
+            #else:
                 
-                print(f"lc smaller than 3. IQ value filled with 0")
+                #print(f"lc smaller than 3. IQ value filled with 0")
                 
     
     # concatenate data
     # data shape: [128, 12] == [batch, 6 channels means + 6 channels iq]
     concatenate = torch.tensor(np.concatenate((means, iqs), axis = 1))
-        
+#     concatenate = pvars
+    
 #     print(concatenate.shape)
     
     return concatenate

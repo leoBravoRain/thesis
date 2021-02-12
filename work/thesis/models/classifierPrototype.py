@@ -12,7 +12,7 @@ class EncoderClassifier(torch.nn.Module):
     
 
     # init method
-    def __init__(self, latent_dim, hidden_dim, input_dim, num_classes, passband, includeDeltaErrors = True, includeOtherFeatures = False):
+    def __init__(self, latent_dim, hidden_dim, input_dim, num_classes, passband, includeDeltaErrors = True, includeOtherFeatures = False, otherFeaturesDim = 0):
     
     
         super(type(self), self).__init__()
@@ -41,12 +41,14 @@ class EncoderClassifier(torch.nn.Module):
 #         self.hidden1 = torch.nn.Linear(1088, hidden_dim)
 #         self.hidden1 = torch.nn.Linear(1632, hidden_dim)
         
-        self.hidden1 = torch.nn.Linear(((768 + 12) if includeOtherFeatures else 768) if includeDeltaErrors else 512, hidden_dim)
+        self.hidden1 = torch.nn.Linear(((768 + otherFeaturesDim) if includeOtherFeatures else 768) if includeDeltaErrors else 512, hidden_dim)
+#         self.hidden1 = torch.nn.Linear(((768) if includeOtherFeatures else 768) if includeDeltaErrors else 512, hidden_dim)
         
 #         self.hidden2 = torch.nn.Linear(hidden_dim, hidden_dim)
         
         # output layer
         self.outputLayer = torch.nn.Linear(hidden_dim, num_classes)
+#         self.outputLayer = torch.nn.Linear(hidden_dim + otherFeaturesDim, num_classes)
         
         # activation function
         self.activationConv = torch.nn.ReLU() #max(0, x)
@@ -186,11 +188,15 @@ class EncoderClassifier(torch.nn.Module):
             
             if self.includeOtherFeatures:
             
+#                 print(otherFeatures.shape)
+                
                 output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv, otherFeatures), dim = 1)
             
             else:
                 
                 output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv), dim = 1)
+    
+#             output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv), dim = 1)
             
             
         else:
@@ -201,9 +207,19 @@ class EncoderClassifier(torch.nn.Module):
         
         
         # x -> hidden1 -> activation
-        # print("before linear layer: {0}".format(output.shape))
+#         print("before linear layer: {0}".format(output.shape))
 
         output = self.activationLinear(self.hidden1(output))
+        
+#         print("output hidden 1 ", output.shape)
+        
+#         if self.includeOtherFeatures:
+            
+# #                 print(otherFeatures.shape)
+                
+#                 output = torch.cat((output, otherFeatures), dim = 1)
+        
+#         print("output hidden 1 concatenated ", output.shape)
         # Should be an activiation function here?
 #         output = (self.hidden1(output))
         
