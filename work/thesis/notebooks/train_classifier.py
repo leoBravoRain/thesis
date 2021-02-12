@@ -121,7 +121,7 @@ from torch.utils import data
 
 # from tqdm import tqdm_notebook
 
-get_ipython().run_line_magic('matplotlib', 'notebook')
+# %matplotlib notebook
 
 # import functions to load dataset
 import sys
@@ -134,8 +134,8 @@ import math
 from torch import nn
 
 # local imports
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
+# %load_ext autoreload
+# %autoreload 2
 sys.path.append('../models')
 # from classifier import EncoderClassifier, 
 from classifierPrototype import EncoderClassifier
