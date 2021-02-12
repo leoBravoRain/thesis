@@ -29,7 +29,7 @@ number_experiment = 14
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 1
+seed = 0
 
 # training
 epochs = 100000
@@ -50,6 +50,10 @@ passband = [0, 1, 2, 3, 4, 5]
 
 # include ohter feautures
 includeOtherFeatures = True
+
+# num of features to add
+# ṕvar by channel
+otherFeaturesDim = 12
 
 
 # In[2]:
@@ -117,7 +121,7 @@ from torch.utils import data
 
 # from tqdm import tqdm_notebook
 
-# %matplotlib notebook
+get_ipython().run_line_magic('matplotlib', 'notebook')
 
 # import functions to load dataset
 import sys
@@ -130,8 +134,8 @@ import math
 from torch import nn
 
 # local imports
-# %load_ext autoreload
-# %autoreload 2
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
 sys.path.append('../models')
 # from classifier import EncoderClassifier, 
 from classifierPrototype import EncoderClassifier
@@ -142,15 +146,9 @@ from auxFunctions import *
 from sklearn.model_selection import train_test_split
 
 
-# In[6]:
-
-
-torch.__version__
-
-
 # ## Load the path to save model while training
 
-# In[7]:
+# In[6]:
 
 
 import os
@@ -186,7 +184,7 @@ pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (t
 
 # # Load data
 
-# In[8]:
+# In[7]:
 
 
 # define path to dataset
@@ -195,7 +193,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[9]:
+# In[8]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -205,7 +203,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
-# In[10]:
+# In[9]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -214,7 +212,7 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[11]:
+# In[10]:
 
 
 # splitting the data
@@ -256,14 +254,14 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[12]:
+# In[11]:
 
 
 # saving ids
 saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightCurvesIds, targets)
 
 
-# In[13]:
+# In[12]:
 
 
 # # load ids dictionary
@@ -272,7 +270,7 @@ saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightC
 # print(output)
 
 
-# In[14]:
+# In[13]:
 
 
 # # analize classes distributino
@@ -283,7 +281,7 @@ ax[1].hist(targets[valIdx])
 ax[2].hist(targets[testIdx])
 
 
-# In[15]:
+# In[14]:
 
 
 # # Spliting the data
@@ -329,7 +327,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[16]:
+# In[15]:
 
 
 print("initila distribution")
@@ -342,7 +340,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[17]:
+# In[16]:
 
 
 # # Create data loader (minibatches)
@@ -395,7 +393,7 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[18]:
+# In[17]:
 
 
 print("balanced distribution")
@@ -407,14 +405,14 @@ print(balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
-# In[19]:
+# In[18]:
 
 
 # save ids of dataset to use (train, test and validation)
 saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path = folder_path)
 
 
-# In[20]:
+# In[19]:
 
 
 # # load ids dictionary
@@ -425,7 +423,7 @@ saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size,
 
 # ## Create experiment parameters file
 
-# In[21]:
+# In[20]:
 
 
 # store varibales on file
@@ -439,7 +437,7 @@ if trainingOnGuanaco or trainWithJustPython:
 
 # ## Defining parameters to Autoencoder
 
-# In[22]:
+# In[21]:
 
 
 # check number of parameters
@@ -473,6 +471,7 @@ else:
         passband = passband, 
         includeDeltaErrors = includeDeltaErrors,
         includeOtherFeatures = includeOtherFeatures,
+        otherFeaturesDim = otherFeaturesDim,
     )
 
     # mdel to GPU
@@ -481,7 +480,7 @@ else:
     print("creating model with default parameters")
 
 
-# In[23]:
+# In[22]:
 
 
 print(model)
@@ -490,182 +489,6 @@ print(model)
 # ### Training
 
 # In[24]:
-
-
-# from sklearn.metrics import f1_score
-
-# # optimizeraa
-# optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum = 0.5)
-
-# # loss function
-# lossFunction = nn.CrossEntropyLoss()
-
-# # loss
-# train_loss = np.zeros((epochs,))
-# test_loss = np.zeros((epochs,))
-
-# # f1 scores
-# f1Scores = np.zeros((epochs, ))
-
-# # min global test loss 
-# minTestLossGlobalSoFar = float("inf")
-
-# # # # loss plot
-# # if it is not cluster
-# if (not trainingOnGuanaco) or (not trainWithJustPython):
-    
-#     # add f1 and loss plots
-#     fig, ax = plt.subplots(1, 2, figsize = (7, 3), tight_layout = True)
-#     # # fig, ax = plt.subplots()
-    
-#     # error
-#     ax[0].set_xlabel("Epoch")
-#     ax[0].set_ylabel("Error")
-    
-    
-#     # f1 score
-#     ax[1].set_xlabel("Epoch")
-#     ax[1].set_ylabel("F1 score")
-    
-
-# # early stopping
-# # prior_test_error = 0
-# count_early_stop = 0
-# threshold_early_stop = threshold_early_stop
-
-
-# print("starting the training")
-
-
-# # epoch
-# for nepoch in range(epochs):
-        
-#     print("epoch:    {0} / {1}".format(nepoch, epochs))
-    
-    
-    
-     
-#     ######## Train ###########
-#     epoch_train_loss = 0
-    
-#     for data_ in trainLoader:
-        
-#         data = data_[0]
-#         labels = data_[1].to(device = cuda_device)
-# #         labels = data_[1]
-        
-#         optimizer.zero_grad()
-            
-#         # this take the deltas (time and magnitude)
-#         data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
-# #         data = generateDeltas(data, passband).type(torch.FloatTensor)
-            
-#         # add other features
-#         # [batch size, features]
-# #         if includeOtherFeatures:
-#         if includeOtherFeatures:
-            
-#             otherFeatures = getOtherFeatures(data_[0]).to(device = cuda_device)
-                
-# #             print(np.any(torch.isnan(otherFeatures).cpu().numpy()))
-            
-#             if np.any(torch.isnan(otherFeatures).cpu().numpy()):
-                
-#                 print(f"other features with nan values in epoch {nepoch}")
-            
-            
-#             # get model output
-#             outputs = model.forward(data, includeDeltaErrors, otherFeatures)
-            
-            
-#             # #         # testing tensor size 
-# # #         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
-# # #         print("test ok")
-        
-#         else:
-            
-#             # get model output
-#             outputs = model.forward(data, includeDeltaErrors)
-
-        
-# #         break
-
-
-# In[25]:
-
-
-# # testing if means and iq are correct
-
-# channels = [0, 1, 2, 3, 4, 5]
-# indexs = np.random.choice(len(data_[2]), 2)
-
-# # print(indexs)
-
-# fig, ax = plt.subplots(
-#     len(indexs), 
-#     len(channels),
-#     figsize = (12, 2*len(indexs)),
-#     tight_layout = True,
-# )
-
-# for index in np.arange(len(indexs)):
-    
-#     for channel in channels:
-    
-#         mask = data_[0][indexs[index], channel, 3, :]
-
-#         mask = mask.type(torch.BoolTensor)
-    
-# #         print(f"index: {indexs[index]}")
-        
-#         # print("data shape")
-#         # print(data_[0].shape)
-
-#         # datashape: [ 128, 6, 4, 72 ]
-#         ax[index][channel].scatter(
-#             data_[0][indexs[index], channel, 0, mask], 
-#             data_[0][indexs[index], channel, 1, mask],
-#         )
-
-#         # print("values:")
-#         # print(otherFeatures[index, 0])
-
-
-#         # manual mean
-#         manualMean = torch.mean(data_[0][indexs[index], channel, 1, mask])
-
-# #         ax[index][channel].hlines(
-# #             manualMean, 
-# #             xmin = data_[0][indexs[index], channel, 0, mask][0], 
-# #             xmax = data_[0][indexs[index], channel, 0, mask][-1],
-# #             color = "r"
-# #         )
-        
-#         # analyze features
-#         ax[index][channel].hlines(
-#             otherFeatures[indexs[index], channel].item(), 
-#             xmin = data_[0][indexs[index], channel, 0, mask][0], 
-#             xmax = data_[0][indexs[index], channel, 0, mask][-1],
-#             color = "r"
-#         )
-        
-#         # test mean
-#         assert manualMean.item() == otherFeatures[indexs[index], channel].item()
-#         print("mean test ok")
-
-        
-#         iqManual =  torch.kthvalue(data_[0][indexs[index], channel, 1, mask], int(0.75*data_[0][indexs[index], channel, 1, mask].shape[0]))[0] - torch.kthvalue(data_[0][indexs[index], channel, 1, mask], int(0.25*data_[0][indexs[index], channel, 1, mask].shape[0]))[0]
-
-#         assert iqManual.item() == otherFeatures[indexs[index], 6 + channel].item()
-#         print("iq test ok")
-        
-        
-# #         print(manualMean.item())
-# #         print(otherFeatures[indexs[index], channel].item())
-# #         print("----")
-
-
-# In[26]:
 
 
 from sklearn.metrics import f1_score
@@ -743,6 +566,8 @@ for nepoch in range(epochs):
             
             otherFeatures = getOtherFeatures(data_[0]).to(device = cuda_device)
                 
+#             print(otherFeatures.shape)
+            
 #             print(np.any(torch.isnan(otherFeatures).cpu().numpy()))
             
             if np.any(torch.isnan(otherFeatures).cpu().numpy()):
@@ -937,7 +762,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[27]:
+# In[ ]:
 
 
 # get metrics on trainig dataset
@@ -969,7 +794,7 @@ getConfusionAndClassificationReport(validationLoader,
 
 # ### Stop execution if it's on cluster
 
-# In[28]:
+# In[ ]:
 
 
 import sys
@@ -979,12 +804,18 @@ if  trainingOnGuanaco or trainWithJustPython:
     sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
 
 
+# In[ ]:
+
+
+sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
+
+
 # # Analyzing training
 
 # In[ ]:
 
 
-get_ipython().system('cat ../experiments/99/seed0/maxClass15k/experimentParameters.txt')
+get_ipython().system('cat ../experiments/14/seed0/maxClass15k/experimentParameters.txt')
 
 
 # In[ ]:
@@ -1002,7 +833,7 @@ print(folder_path)
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
 
-maxPlot = 100
+maxPlot = 800
 
 # loss
 ax[0].set_xlabel("N° epoch")
