@@ -39,7 +39,10 @@ def Pvar(magnitude, error):
 def getOtherFeatures(data):
     
     # get means
-    means = torch.zeros(size = (data.shape[0], data.shape[1]))
+#     means = torch.zeros(size = (data.shape[0], data.shape[1]))
+
+    # medians
+    medians = torch.zeros(size = (data.shape[0], data.shape[1]))
     
     # iq
     iqs = torch.zeros(size = (data.shape[0], data.shape[1]))
@@ -61,24 +64,36 @@ def getOtherFeatures(data):
 #             # get pvars 
 #             pvars[lc_id, channel] = Pvar(lc_masked.numpy(), data[lc_id, channel, 2, mask].numpy())
             
-            # get means
-            means[lc_id, channel] = torch.mean(lc_masked)
+            # get medians
+            medians[lc_id, channel] = torch.median(lc_masked)
+            
+#             # get means
+#             means[lc_id, channel] = torch.mean(lc_masked)
         
-            # get IQ
-            # output shape: [128, 6]
-            # with small length values, the iq fails. It fails with length smaller or equal than 3
-            if lc_masked.shape[0] > 3:
+#             # get IQ
+#             # output shape: [128, 6]
+#             # with small length values, the iq fails. It fails with length smaller or equal than 3
+            iqs[lc_id, channel] =  np.percentile(lc_masked, 75) - np.percentile(lc_masked, 25)
+    
+#             if lc_masked.shape[0] > 3:
                 
-                iqs[lc_id, channel] = torch.kthvalue(lc_masked, int(0.75*lc_masked.shape[0]))[0] - torch.kthvalue(lc_masked, int(0.25*lc_masked.shape[0]))[0]
-
-            #else:
+# #                 iqs[lc_id, channel] = torch.kthvalue(lc_masked, int(0.75*lc_masked.shape[0]))[0] - torch.kthvalue(lc_masked, int(0.25*lc_masked.shape[0]))[0]
+#                 iqs[lc_id, channel] =  np.percentile(lc_masked, 75) - np.percentile(lc_masked, 25)
+# #                 iqManualTorch = torch.kthvalue(lc_masked, int(0.75*lc_masked.shape[0]))[0] - torch.kthvalue(lc_masked, int(0.25*lc_masked.shape[0]))[0]
+# #                 iqManualNumpy = np.percentile(lc_masked, 75) - np.percentile(lc_masked, 25)
                 
-                #print(f"lc smaller than 3. IQ value filled with 0")
+# #                 print(iqManualTorch)
+# #                 print(iqManualNumpy)
+                
+#             else:
+                
+#                 print(f"lc smaller than 3. IQ value filled with 0")
                 
     
     # concatenate data
     # data shape: [128, 12] == [batch, 6 channels means + 6 channels iq]
-    concatenate = torch.tensor(np.concatenate((means, iqs), axis = 1))
+#     concatenate = torch.tensor(np.concatenate((means, iqs), axis = 1))
+    concatenate = torch.tensor(np.concatenate((medians, iqs), axis = 1))
 #     concatenate = pvars
     
 #     print(concatenate.shape)

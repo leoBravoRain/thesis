@@ -190,6 +190,8 @@ class EncoderClassifier(torch.nn.Module):
             
 #                 print(otherFeatures.shape)
                 
+#                 print(otherFeatures)
+                
                 output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv, otherFeatures), dim = 1)
             
             else:
