@@ -6,6 +6,7 @@ import torch
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 import pickle
+import sys
 
 # to compute features
 from scipy.stats import chi2
@@ -44,8 +45,8 @@ def getOtherFeatures(data):
     # medians
     medians = torch.zeros(size = (data.shape[0], data.shape[1]))
     
-    # iq
-    iqs = torch.zeros(size = (data.shape[0], data.shape[1]))
+    # iqr
+    iqrs = torch.zeros(size = (data.shape[0], data.shape[1]))
     
 #     # pvar 
 #     pvars = torch.zeros(size = (data.shape[0], data.shape[1]))
@@ -73,12 +74,20 @@ def getOtherFeatures(data):
 #             # get IQ
 #             # output shape: [128, 6]
 #             # with small length values, the iq fails. It fails with length smaller or equal than 3
-            iqs[lc_id, channel] =  np.percentile(lc_masked, 75) - np.percentile(lc_masked, 25)
-    
+            iqrs[lc_id, channel] =  np.percentile(lc_masked, 75) - np.percentile(lc_masked, 25)
+        
+#             print(iqrs[lc_id, channel])
+            
+            if iqrs[lc_id, channel] < 0:
+            
+                print("iqr NEGATIVE")
+                
+                sys.exit("Exit from code, because IQR has negative value")
+                
 #             if lc_masked.shape[0] > 3:
                 
-# #                 iqs[lc_id, channel] = torch.kthvalue(lc_masked, int(0.75*lc_masked.shape[0]))[0] - torch.kthvalue(lc_masked, int(0.25*lc_masked.shape[0]))[0]
-#                 iqs[lc_id, channel] =  np.percentile(lc_masked, 75) - np.percentile(lc_masked, 25)
+# #                 iqrs[lc_id, channel] = torch.kthvalue(lc_masked, int(0.75*lc_masked.shape[0]))[0] - torch.kthvalue(lc_masked, int(0.25*lc_masked.shape[0]))[0]
+#                 iqrs[lc_id, channel] =  np.percentile(lc_masked, 75) - np.percentile(lc_masked, 25)
 # #                 iqManualTorch = torch.kthvalue(lc_masked, int(0.75*lc_masked.shape[0]))[0] - torch.kthvalue(lc_masked, int(0.25*lc_masked.shape[0]))[0]
 # #                 iqManualNumpy = np.percentile(lc_masked, 75) - np.percentile(lc_masked, 25)
                 
@@ -92,9 +101,10 @@ def getOtherFeatures(data):
     
     # concatenate data
     # data shape: [128, 12] == [batch, 6 channels means + 6 channels iq]
-#     concatenate = torch.tensor(np.concatenate((means, iqs), axis = 1))
-    concatenate = torch.tensor(np.concatenate((medians, iqs), axis = 1))
+#     concatenate = torch.tensor(np.concatenate((means, iqrs), axis = 1))
+    concatenate = torch.tensor(np.concatenate((medians, iqrs), axis = 1))
 #     concatenate = pvars
+#     concatenate = medians
     
 #     print(concatenate.shape)
     
@@ -362,12 +372,15 @@ def saveBestModel(model, pathToSaveModel, number_experiment, nepoch, newError, e
     
 
 # get confusion matrix and classification report
-def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, staticLabels, number_experiment, expPath, includeDeltaErrors, includeOtherFeatures):
+def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, staticLabels, number_experiment, expPath, includeDeltaErrors, includeOtherFeatures, normalizedFeatures):
     
     # get y true and labels
     predictions = np.zeros(shape = (0,))
     labels_ = np.zeros(shape = (0,))
 
+    # this is to get the other features
+    lastIndex = 0
+    
     # minibatches
     for data_ in dataSet:
 
@@ -378,10 +391,21 @@ def getConfusionAndClassificationReport(dataSet, nameLabel, passband, model, sta
     
         if includeOtherFeatures:
             
-            otherFeatures = getOtherFeatures(data_[0]).cuda()
+#             otherFeatures = getOtherFeatures(data_[0]).cuda()
+            lastIndex_ = lastIndex + data_[0].shape[0]
+
+            otherFeatures = normalizedFeatures[lastIndex : lastIndex_, :].cuda()
         
-        # get model output
-        outputs = model.forward(data, includeDeltaErrors, otherFeatures)
+            lastIndex = lastIndex_
+        
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors, otherFeatures)
+            
+        else:
+            
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors)
+            
         
         prediction = torch.argmax(outputs, 1).cpu().numpy()
 

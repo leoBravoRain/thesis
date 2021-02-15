@@ -121,7 +121,7 @@ from torch.utils import data
 
 # from tqdm import tqdm_notebook
 
-# %matplotlib notebook
+get_ipython().run_line_magic('matplotlib', 'notebook')
 
 # import functions to load dataset
 import sys
@@ -134,8 +134,8 @@ import math
 from torch import nn
 
 # local imports
-# %load_ext autoreload
-# %autoreload 2
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
 sys.path.append('../models')
 # from classifier import EncoderClassifier, 
 from classifierPrototype import EncoderClassifier
@@ -421,9 +421,78 @@ saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size,
 # print(output["validation"])
 
 
-# ## Create experiment parameters file
+# # Get other features
 
 # In[20]:
+
+
+# normalize other features
+def normalizeOtherFeatures(features):
+    
+    # normalize 
+#     print(features[:1])
+    
+    means = np.mean(features, axis = 0)
+    
+    stds = np.std(features, axis = 0)
+    
+#     print(means)
+#     print(stds)
+    
+    normalizedFeatures = (features - means) / stds
+    
+#     print(normalizedFeatures[:1])
+    
+    return normalizedFeatures
+
+
+# In[21]:
+
+
+if includeOtherFeatures:
+    
+    # save features
+    trainOtherFeaturesArray = np.zeros(shape = (train_size, otherFeaturesDim))
+    validOtherFeaturesArray = np.zeros(shape = (validation_size, otherFeaturesDim))
+
+    print("starting to get the other features")
+
+    trainLastIndex = 0
+    validLastIndex = 0
+    
+    for trainData_, validData_ in zip(trainLoader, validationLoader):
+
+        # add other features
+        # [batch size, features]
+        trainOtherFeatures = getOtherFeatures(trainData_[0]).to(device = cuda_device)
+        validOtherFeatures = getOtherFeatures(validData_[0]).to(device = cuda_device)
+
+        trainLastIndex_ = trainLastIndex + trainData_[0].shape[0]
+        validLastIndex_ = validLastIndex + validData_[0].shape[0]
+        
+
+        trainOtherFeaturesArray[trainLastIndex : trainLastIndex_] = trainOtherFeatures.cpu().numpy()
+        
+        validOtherFeaturesArray[validLastIndex : validLastIndex_] = validOtherFeatures.cpu().numpy()
+        
+        trainLastIndex = trainLastIndex_
+        validLastIndex = validLastIndex_
+        
+    print("finish to get other features")
+    
+    print("normalize features")
+    # normalize features
+    trainNormalizedFeatures = torch.from_numpy(normalizeOtherFeatures(trainOtherFeaturesArray)).type(torch.FloatTensor)
+    validNormalizedFeatures = torch.from_numpy(normalizeOtherFeatures(validOtherFeaturesArray)).type(torch.FloatTensor)
+    
+    # check nan values
+    print(f"nan values train: {np.any(torch.isnan(trainNormalizedFeatures).cpu().numpy())}")
+    print(f"nan values valid: {np.any(torch.isnan(validNormalizedFeatures).cpu().numpy())}")
+
+
+# ## Create experiment parameters file
+
+# In[22]:
 
 
 # store varibales on file
@@ -437,7 +506,7 @@ if trainingOnGuanaco or trainWithJustPython:
 
 # ## Defining parameters to Autoencoder
 
-# In[21]:
+# In[23]:
 
 
 # check number of parameters
@@ -480,7 +549,7 @@ else:
     print("creating model with default parameters")
 
 
-# In[22]:
+# In[24]:
 
 
 print(model)
@@ -488,7 +557,7 @@ print(model)
 
 # ### Training
 
-# In[24]:
+# In[25]:
 
 
 from sklearn.metrics import f1_score
@@ -547,6 +616,9 @@ for nepoch in range(epochs):
     ######## Train ###########
     epoch_train_loss = 0
     
+    # this is for getting the other features
+    trainLastIndex = 0
+    
     for data_ in trainLoader:
         
         data = data_[0]
@@ -564,12 +636,13 @@ for nepoch in range(epochs):
 #         if includeOtherFeatures:
         if includeOtherFeatures:
             
-            otherFeatures = getOtherFeatures(data_[0]).to(device = cuda_device)
-                
-#             print(otherFeatures.shape)
+            trainLastIndex_ = trainLastIndex + data_[0].shape[0]
+
+            otherFeatures = trainNormalizedFeatures[trainLastIndex : trainLastIndex_, :].to(device = cuda_device)
+        
+            trainLastIndex = trainLastIndex_
             
-#             print(np.any(torch.isnan(otherFeatures).cpu().numpy()))
-            
+            # validate data
             if np.any(torch.isnan(otherFeatures).cpu().numpy()):
                 
                 print(f"other features with nan values in epoch {nepoch}")
@@ -639,6 +712,9 @@ for nepoch in range(epochs):
     
     batchCounter = 0
     
+    # this is to get other features
+    validLastIndex = 0
+    
     # minibatches
     for data_ in validationLoader:
         
@@ -650,8 +726,13 @@ for nepoch in range(epochs):
     
         if includeOtherFeatures:
             
-            otherFeatures = getOtherFeatures(data_[0]).to(device = cuda_device)
+#             otherFeatures = getOtherFeatures(data_[0]).to(device = cuda_device)
+            validLastIndex_ = validLastIndex + data_[0].shape[0]
+
+            otherFeatures = validNormalizedFeatures[validLastIndex : validLastIndex_, :].to(device = cuda_device)
         
+            validLastIndex = validLastIndex_
+            
 # #         # testing tensor size 
 # #         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
 # #         print("test ok")
@@ -762,7 +843,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[ ]:
+# In[26]:
 
 
 # get metrics on trainig dataset
@@ -775,26 +856,29 @@ getConfusionAndClassificationReport(
     number_experiment = number_experiment, 
     expPath = expPath, 
     includeDeltaErrors = includeDeltaErrors, 
-    includeOtherFeatures = includeOtherFeatures
+    includeOtherFeatures = includeOtherFeatures,
+    normalizedFeatures = trainNormalizedFeatures,
 )
 
 
 # get metrics on validation dataset
-getConfusionAndClassificationReport(validationLoader, 
-                                    nameLabel = "Validation", 
-                                    passband = passband, 
-                                    model = model, 
-                                    staticLabels = only_these_labels, 
-                                    number_experiment = number_experiment, 
-                                    expPath = expPath, 
-                                    includeDeltaErrors = includeDeltaErrors, 
-                                    includeOtherFeatures = includeOtherFeatures
-                                   )
+getConfusionAndClassificationReport(
+    validationLoader, 
+    nameLabel = "Validation", 
+    passband = passband, 
+    model = model, 
+    staticLabels = only_these_labels, 
+    number_experiment = number_experiment, 
+    expPath = expPath, 
+    includeDeltaErrors = includeDeltaErrors, 
+    includeOtherFeatures = includeOtherFeatures,
+    normalizedFeatures = validNormalizedFeatures,
+)
 
 
 # ### Stop execution if it's on cluster
 
-# In[ ]:
+# In[27]:
 
 
 import sys
@@ -804,7 +888,7 @@ if  trainingOnGuanaco or trainWithJustPython:
     sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
 
 
-# In[ ]:
+# In[28]:
 
 
 sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
@@ -818,7 +902,7 @@ sys.exit("Exit from code, because we are in cluster or running locally. Training
 get_ipython().system('cat ../experiments/14/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[ ]:
+# In[31]:
 
 
 # load losses array
@@ -855,13 +939,13 @@ ax[1].plot(f1Scores.iloc[:maxPlot])
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[ ]:
+# In[32]:
 
 
 get_ipython().system('cat ../experiments/14/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[ ]:
+# In[33]:
 
 
 # confusion matrix
@@ -882,7 +966,7 @@ print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[ ]:
+# In[34]:
 
 
 print("Validation")
