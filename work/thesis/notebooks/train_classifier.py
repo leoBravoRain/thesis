@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
 trainWithJustPython = False
@@ -25,14 +25,14 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 14
+number_experiment = 99
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
 seed = 0
 
 # training
-epochs = 100000
+epochs = 1000
 
 # max elements by class
 max_elements_per_class = 15000
@@ -121,7 +121,7 @@ from torch.utils import data
 
 # from tqdm import tqdm_notebook
 
-get_ipython().run_line_magic('matplotlib', 'notebook')
+# %matplotlib notebook
 
 # import functions to load dataset
 import sys
@@ -134,8 +134,8 @@ import math
 from torch import nn
 
 # local imports
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
+# %load_ext autoreload
+# %autoreload 2
 sys.path.append('../models')
 # from classifier import EncoderClassifier, 
 from classifierPrototype import EncoderClassifier
@@ -203,7 +203,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
-# In[9]:
+# In[ ]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -212,7 +212,7 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[10]:
+# In[ ]:
 
 
 # splitting the data
@@ -254,14 +254,14 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[11]:
+# In[ ]:
 
 
 # saving ids
 saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightCurvesIds, targets)
 
 
-# In[12]:
+# In[ ]:
 
 
 # # load ids dictionary
@@ -270,7 +270,7 @@ saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightC
 # print(output)
 
 
-# In[13]:
+# In[ ]:
 
 
 # # analize classes distributino
@@ -281,7 +281,7 @@ ax[1].hist(targets[valIdx])
 ax[2].hist(targets[testIdx])
 
 
-# In[14]:
+# In[ ]:
 
 
 # # Spliting the data
@@ -327,7 +327,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[15]:
+# In[ ]:
 
 
 print("initila distribution")
@@ -340,7 +340,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[16]:
+# In[ ]:
 
 
 # # Create data loader (minibatches)
@@ -393,7 +393,7 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[17]:
+# In[ ]:
 
 
 print("balanced distribution")
@@ -405,14 +405,14 @@ print(balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
-# In[18]:
+# In[ ]:
 
 
 # save ids of dataset to use (train, test and validation)
 saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path = folder_path)
 
 
-# In[19]:
+# In[ ]:
 
 
 # # load ids dictionary
@@ -423,7 +423,7 @@ saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size,
 
 # # Get other features
 
-# In[20]:
+# In[ ]:
 
 
 # normalize other features
@@ -446,7 +446,7 @@ def normalizeOtherFeatures(features):
     return normalizedFeatures
 
 
-# In[21]:
+# In[ ]:
 
 
 if includeOtherFeatures:
@@ -492,7 +492,7 @@ if includeOtherFeatures:
 
 # ## Create experiment parameters file
 
-# In[22]:
+# In[ ]:
 
 
 # store varibales on file
@@ -506,7 +506,7 @@ if trainingOnGuanaco or trainWithJustPython:
 
 # ## Defining parameters to Autoencoder
 
-# In[23]:
+# In[ ]:
 
 
 # check number of parameters
@@ -549,7 +549,7 @@ else:
     print("creating model with default parameters")
 
 
-# In[24]:
+# In[ ]:
 
 
 print(model)
@@ -557,7 +557,7 @@ print(model)
 
 # ### Training
 
-# In[25]:
+# In[ ]:
 
 
 from sklearn.metrics import f1_score
@@ -843,7 +843,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[26]:
+# In[ ]:
 
 
 # get metrics on trainig dataset
@@ -878,7 +878,7 @@ getConfusionAndClassificationReport(
 
 # ### Stop execution if it's on cluster
 
-# In[27]:
+# In[ ]:
 
 
 import sys
@@ -888,7 +888,7 @@ if  trainingOnGuanaco or trainWithJustPython:
     sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
 
 
-# In[28]:
+# In[ ]:
 
 
 sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
@@ -902,7 +902,7 @@ sys.exit("Exit from code, because we are in cluster or running locally. Training
 get_ipython().system('cat ../experiments/14/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[31]:
+# In[ ]:
 
 
 # load losses array
@@ -939,13 +939,13 @@ ax[1].plot(f1Scores.iloc[:maxPlot])
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[32]:
+# In[ ]:
 
 
 get_ipython().system('cat ../experiments/14/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
-# In[33]:
+# In[ ]:
 
 
 # confusion matrix
@@ -966,7 +966,7 @@ print("Normalization: " + normalization)
 sn.heatmap(cmTrain, annot=True)
 
 
-# In[34]:
+# In[ ]:
 
 
 print("Validation")
