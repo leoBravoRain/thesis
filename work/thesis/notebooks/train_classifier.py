@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = False
+trainingOnGuanaco = True
 
 # train without notebook
 trainWithJustPython = False
@@ -25,14 +25,14 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 99
+number_experiment = 14
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
 seed = 0
 
 # training
-epochs = 1000
+epochs = 100000
 
 # max elements by class
 max_elements_per_class = 15000
