@@ -310,24 +310,16 @@ def generate_delta_mask(mask):
 # data = [batchSize, channels, [time, flux, err, mask], light curve samples]
 def generateDeltas(data, passBand,includeDeltaErrors = True):
     
-    # work with delta time and magnitude
-    
-#     print("generate deltas input shape: {0}".format(data.shape) )
     # delta time
-#     tmpDeltaTime = data[:, passBand, 0, 1:] - data[:, passBand, 0, :-1]
     tmpDeltaTime = data[:, passBand, 0, 1:] - data[:, passBand, 0, :-1]
 
-#     print("generate deltas time shape: {0}".format(tmpDeltaTime.shape) )
-
-#     # delta magnitude
+    # delta magnitude
     tmpDeltaMagnitude = data[:, passBand, 1, 1:] - data[:, passBand, 1, :-1]
-#     print("generate deltas flux shape: {0}".format(tmpDeltaMagnitude.shape))
     
     # delta errors
     if includeDeltaErrors:
         
         tmpDeltaMagError = ((data[:, passBand, 2, 1:]**2) + (data[:, passBand, 2, :-1]**2))**0.5
-        # tmpDeltaMagError = data[:, passBand, 2, 1:]
     
     # delta mask
     tmpMask = generate_delta_mask(data[:, passBand, 3,:])
@@ -344,11 +336,6 @@ def generateDeltas(data, passBand,includeDeltaErrors = True):
         
         dataToUse = torch.cat((tmpDeltaTime.unsqueeze(2), tmpDeltaMagnitude.unsqueeze(2), tmpMask.unsqueeze(2)), 2)
         
-    #     print("data to use shape: {0}".format(dataToUse.shape))
-    
-    # normalize data
-    # this was commented because it considerate that delta is already a normalization
-#     dataToUse = normalizeLightCurve(dataToUse)
     
     # returning data
     return dataToUse

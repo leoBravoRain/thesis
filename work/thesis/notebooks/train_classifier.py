@@ -53,7 +53,7 @@ includeOtherFeatures = False
 
 # num of features to add
 # ṕvar by channel
-otherFeaturesDim = 0
+otherFeaturesDim = 12
 
 
 # In[2]:
@@ -121,8 +121,14 @@ from torch.utils import data
 
 # from tqdm import tqdm_notebook
 
-# %matplotlib notebook
-
+if not trainingOnGuanaco:
+    
+    get_ipython().run_line_magic('matplotlib', 'notebook')
+    get_ipython().run_line_magic('load_ext', 'autoreload')
+    get_ipython().run_line_magic('autoreload', '2')
+else:
+    print("not load magics")
+    
 # import functions to load dataset
 import sys
 sys.path.append("./codesToDatasets")
@@ -535,7 +541,7 @@ print(model)
 
 # ### Training
 
-# In[24]:
+# In[25]:
 
 
 from sklearn.metrics import f1_score
@@ -600,13 +606,14 @@ for nepoch in range(epochs):
     
     for data_ in trainLoader:
         
-        data = data_[0]
+        # get raw data and labels
         labels = data_[1].to(device = cuda_device)
         
+        # optimzer to zero
         optimizer.zero_grad()
             
         # this returns deltas
-        data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
+        data = generateDeltas(data_[0], passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
             
         # add other features
         # [batch size, features]
@@ -632,6 +639,7 @@ for nepoch in range(epochs):
             # get model output
             outputs = model.forward(data, includeDeltaErrors)
 
+        # validate nana values on output model
         if np.any(torch.isnan(outputs).cpu().numpy()):
                 
                 print(f"outpues with nan values in epoch {nepoch}")
@@ -680,11 +688,11 @@ for nepoch in range(epochs):
     # minibatches
     for data_ in validationLoader:
         
-        data = data_[0]
+#         data = data_[0]
         labels = data_[1].to(device = cuda_device)
             
         # get deltas
-        data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
+        data = generateDeltas(data_[0], passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
     
     
         if includeOtherFeatures:
