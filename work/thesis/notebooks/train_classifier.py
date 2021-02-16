@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 14
+number_experiment = 15
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
@@ -49,11 +49,11 @@ passband = [0, 1, 2, 3, 4, 5]
 
 
 # include ohter feautures
-includeOtherFeatures = True
+includeOtherFeatures = False
 
 # num of features to add
 # ṕvar by channel
-otherFeaturesDim = 12
+otherFeaturesDim = 0
 
 
 # In[2]:
@@ -203,7 +203,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 torch_dataset_lazy = get_plasticc_datasets(pathToFile, only_these_labels=only_these_labels, max_elements_per_class = max_elements_per_class)
 
 
-# In[ ]:
+# In[9]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
@@ -212,7 +212,7 @@ print("dataset test ok")
 
 # # Spliting data (train/test)
 
-# In[ ]:
+# In[10]:
 
 
 # splitting the data
@@ -254,14 +254,14 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[ ]:
+# In[11]:
 
 
 # saving ids
 saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightCurvesIds, targets)
 
 
-# In[ ]:
+# In[12]:
 
 
 # # load ids dictionary
@@ -270,7 +270,7 @@ saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightC
 # print(output)
 
 
-# In[ ]:
+# In[13]:
 
 
 # # analize classes distributino
@@ -281,7 +281,7 @@ ax[1].hist(targets[valIdx])
 ax[2].hist(targets[testIdx])
 
 
-# In[ ]:
+# In[14]:
 
 
 # # Spliting the data
@@ -327,7 +327,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[ ]:
+# In[15]:
 
 
 print("initila distribution")
@@ -340,7 +340,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[ ]:
+# In[16]:
 
 
 # # Create data loader (minibatches)
@@ -393,7 +393,7 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[ ]:
+# In[17]:
 
 
 print("balanced distribution")
@@ -405,14 +405,14 @@ print(balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
-# In[ ]:
+# In[18]:
 
 
 # save ids of dataset to use (train, test and validation)
 saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path = folder_path)
 
 
-# In[ ]:
+# In[19]:
 
 
 # # load ids dictionary
@@ -423,30 +423,7 @@ saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size,
 
 # # Get other features
 
-# In[ ]:
-
-
-# normalize other features
-def normalizeOtherFeatures(features):
-    
-    # normalize 
-#     print(features[:1])
-    
-    means = np.mean(features, axis = 0)
-    
-    stds = np.std(features, axis = 0)
-    
-#     print(means)
-#     print(stds)
-    
-    normalizedFeatures = (features - means) / stds
-    
-#     print(normalizedFeatures[:1])
-    
-    return normalizedFeatures
-
-
-# In[ ]:
+# In[20]:
 
 
 if includeOtherFeatures:
@@ -467,14 +444,15 @@ if includeOtherFeatures:
         trainOtherFeatures = getOtherFeatures(trainData_[0]).to(device = cuda_device)
         validOtherFeatures = getOtherFeatures(validData_[0]).to(device = cuda_device)
 
+        # indexation
         trainLastIndex_ = trainLastIndex + trainData_[0].shape[0]
         validLastIndex_ = validLastIndex + validData_[0].shape[0]
         
-
+        # save features in array indexing them
         trainOtherFeaturesArray[trainLastIndex : trainLastIndex_] = trainOtherFeatures.cpu().numpy()
-        
         validOtherFeaturesArray[validLastIndex : validLastIndex_] = validOtherFeatures.cpu().numpy()
-        
+            
+        # update indexs
         trainLastIndex = trainLastIndex_
         validLastIndex = validLastIndex_
         
@@ -492,7 +470,7 @@ if includeOtherFeatures:
 
 # ## Create experiment parameters file
 
-# In[ ]:
+# In[21]:
 
 
 # store varibales on file
@@ -506,7 +484,7 @@ if trainingOnGuanaco or trainWithJustPython:
 
 # ## Defining parameters to Autoencoder
 
-# In[ ]:
+# In[22]:
 
 
 # check number of parameters
@@ -549,7 +527,7 @@ else:
     print("creating model with default parameters")
 
 
-# In[ ]:
+# In[23]:
 
 
 print(model)
@@ -557,13 +535,14 @@ print(model)
 
 # ### Training
 
-# In[ ]:
+# In[24]:
 
 
 from sklearn.metrics import f1_score
 
 # optimizeraa
-optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum = 0.5)
+# optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum = 0.5)
+optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
 
 # loss function
 lossFunction = nn.CrossEntropyLoss()
@@ -584,7 +563,6 @@ if (not trainingOnGuanaco) or (not trainWithJustPython):
     
     # add f1 and loss plots
     fig, ax = plt.subplots(1, 2, figsize = (7, 3), tight_layout = True)
-    # # fig, ax = plt.subplots()
     
     # error
     ax[0].set_xlabel("Epoch")
@@ -597,9 +575,7 @@ if (not trainingOnGuanaco) or (not trainWithJustPython):
     
 
 # early stopping
-# prior_test_error = 0
 count_early_stop = 0
-threshold_early_stop = threshold_early_stop
 
 
 print("starting the training")
@@ -614,6 +590,9 @@ for nepoch in range(epochs):
     
      
     ######## Train ###########
+    
+    
+    
     epoch_train_loss = 0
     
     # this is for getting the other features
@@ -623,17 +602,14 @@ for nepoch in range(epochs):
         
         data = data_[0]
         labels = data_[1].to(device = cuda_device)
-#         labels = data_[1]
         
         optimizer.zero_grad()
             
-        # this take the deltas (time and magnitude)
+        # this returns deltas
         data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
-#         data = generateDeltas(data, passband).type(torch.FloatTensor)
             
         # add other features
         # [batch size, features]
-#         if includeOtherFeatures:
         if includeOtherFeatures:
             
             trainLastIndex_ = trainLastIndex + data_[0].shape[0]
@@ -647,15 +623,10 @@ for nepoch in range(epochs):
                 
                 print(f"other features with nan values in epoch {nepoch}")
             
-            
             # get model output
             outputs = model.forward(data, includeDeltaErrors, otherFeatures)
             
             
-            # #         # testing tensor size 
-# #         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
-# #         print("test ok")
-        
         else:
             
             # get model output
@@ -665,31 +636,15 @@ for nepoch in range(epochs):
                 
                 print(f"outpues with nan values in epoch {nepoch}")
                 
-#         print(ouput)
-#         # testing output shape size
-#         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
-#         print("test ok")
-    
-#         print(np.any(torch.isnan(outputs).numpy()))
-        
-#         # data validation
-#         if np.any(torch.isnan(outputs).cpu().numpy()) or np.any(torch.isinf(outputs).cpu().numpy()):
-            
-#             print("invalid input detected at iteration ", nepoch)
-            
-#             print("data: ", data)
-            
-#             print("outputs ", outputs)
-            
+
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
             
+        # validate nan values on loss
         if np.any(torch.isnan(loss).cpu().numpy()):
                 
                 print(f"loss with nan values in epoch {nepoch}")
                 
-#         print(loss)
-        
         # backpropagation
         loss.backward()
         
@@ -703,7 +658,14 @@ for nepoch in range(epochs):
     train_loss[nepoch] = epoch_train_loss / train_size
     
     
+    
+    
+    
+    
     ##### Validation ########
+    
+    
+    
     
     epoch_test_loss = 0
     
@@ -720,35 +682,31 @@ for nepoch in range(epochs):
         
         data = data_[0]
         labels = data_[1].to(device = cuda_device)
-        
-#         data = generateDeltas(data, passband).type(torch.FloatTensor).to(device = cuda_device)
+            
+        # get deltas
         data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
+    
     
         if includeOtherFeatures:
             
-#             otherFeatures = getOtherFeatures(data_[0]).to(device = cuda_device)
             validLastIndex_ = validLastIndex + data_[0].shape[0]
 
             otherFeatures = validNormalizedFeatures[validLastIndex : validLastIndex_, :].to(device = cuda_device)
         
             validLastIndex = validLastIndex_
             
-# #         # testing tensor size 
-# #         assert data.shape == torch.Size([batch_training_size, len(passband), 4, 71]), "Shape should be [minibatch size, channels, 4, 71]"
-# #         print("test ok")
-        
             # get model output
             outputs = model.forward(data, includeDeltaErrors, otherFeatures)
         
-#           # testing output shape size
-#         assert outputs.shape == torch.Size([batch_training_size, len(only_these_labels)]), "Shape should be [minibatch, classes]"
-#         print("test ok")
-
         else:
         
             # get model output
             outputs = model.forward(data, includeDeltaErrors)
-
+        
+        if np.any(torch.isnan(outputs).cpu().numpy()):
+                
+                print(f"outputs with nan values in epoch {nepoch}")
+                
         # loss function
         loss = lossFunction(outputs, mapLabels(labels, only_these_labels).to(device = cuda_device))
         
@@ -758,14 +716,25 @@ for nepoch in range(epochs):
         # f1 score
         f1Score += f1_score(mapLabels(labels, only_these_labels).cpu().numpy(), torch.argmax(outputs, 1).cpu().numpy(), average = "micro")
         
+        
         # batch counter
         batchCounter += 1
+    
     
     # get epoch test loss value
     test_loss[nepoch] = epoch_test_loss / validation_size
     
     # get epoch f1 score
     f1Scores[nepoch] = f1Score / batchCounter
+    
+    
+    
+    
+    
+    
+    
+    # plot values
+    
     
     # plot loss values
     # if it's not cluster
@@ -917,7 +886,7 @@ print(folder_path)
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
 
-maxPlot = 800
+maxPlot = 3000
 
 # loss
 ax[0].set_xlabel("N° epoch")

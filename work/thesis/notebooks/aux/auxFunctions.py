@@ -12,6 +12,20 @@ import sys
 from scipy.stats import chi2
 
 
+# normalize other features
+def normalizeOtherFeatures(features):
+    
+    # normalize 
+    # (value - means) / std
+    
+    means = np.mean(features, axis = 0)
+    
+    stds = np.std(features, axis = 0)
+    
+    normalizedFeatures = (features - means) / stds
+    
+    return normalizedFeatures
+
 # computing Pvar
 def Pvar(magnitude, error):
     """

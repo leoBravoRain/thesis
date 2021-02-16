@@ -192,6 +192,18 @@ class EncoderClassifier(torch.nn.Module):
                 
 #                 print(otherFeatures)
                 
+            
+#                 print("mean values: ")
+#                 print("time", torch.mean(outputTimeConv).item(), "\nmag", torch.mean(outputMagConv).item(), "\n err: ", torch.mean(outputMagErrorConv).item(), "\n other features: ", torch.mean(otherFeatures).item())
+                
+                
+#                 print("max values: ")
+#                 print("time", torch.max(outputTimeConv).item(), "\nmag", torch.max(outputMagConv).item(), "\n err: ", torch.max(outputMagErrorConv).item(), "\n other features: ", torch.max(otherFeatures).item())
+                
+#                 print("min values: ")
+#                 print("time", torch.min(outputTimeConv).item(), "\nmag", torch.min(outputMagConv).item(), "\n err: ", torch.min(outputMagErrorConv).item(), "\n other features: ", torch.min(otherFeatures).item())
+                
+                
                 output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv, otherFeatures), dim = 1)
             
             else:
