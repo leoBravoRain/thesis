@@ -49,7 +49,7 @@ class EncoderClassifier(torch.nn.Module):
     # input shape: [batch_size, channels, sequence_length]
     def forward(self, x, includeDeltaErrors = True, otherFeatures = None):
         
-        
+
         
         ################# convolution 1
         
@@ -164,14 +164,14 @@ class EncoderClassifier(torch.nn.Module):
         
         
         
-        
+        # the data can be with other features, w / o delta errors
         if includeDeltaErrors:
             
             if self.includeOtherFeatures:
-            
+                
                 # concatenate 3 towers + features
                 output = torch.cat((outputTimeConv, outputMagConv, outputMagErrorConv, otherFeatures), dim = 1)
-            
+                
             else:
                 
                 # concatenate 3 towers

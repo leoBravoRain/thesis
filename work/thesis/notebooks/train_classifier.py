@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[4]:
 
 
 # training on guanaco
@@ -49,14 +49,14 @@ passband = [0, 1, 2, 3, 4, 5]
 
 
 # include ohter feautures
-includeOtherFeatures = False
+includeOtherFeatures = True
 
 # num of features to add
 # ṕvar by channel
 otherFeaturesDim = 12
 
 
-# In[2]:
+# In[5]:
 
 
 # cuda device
@@ -90,14 +90,14 @@ batch_training_size = 128
 threshold_early_stop = 3000
 
 
-# In[3]:
+# In[6]:
 
 
 # training params
-learning_rate = 1e-3
+learning_rate = 1e-4
 
 
-# In[4]:
+# In[7]:
 
 
 # add general comment about experiment 
@@ -109,7 +109,7 @@ print(comment)
 
 # # Import libraries
 
-# In[5]:
+# In[8]:
 
 
 import pandas as pd
@@ -154,7 +154,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[6]:
+# In[9]:
 
 
 import os
@@ -432,6 +432,14 @@ saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size,
 # In[20]:
 
 
+print(train_size)
+
+print(validation_size)
+
+
+# In[21]:
+
+
 if includeOtherFeatures:
     
     # save features
@@ -445,7 +453,7 @@ if includeOtherFeatures:
     
     for trainData_, validData_ in zip(trainLoader, validationLoader):
 
-        # add other features
+        # get other features by batch
         # [batch size, features]
         trainOtherFeatures = getOtherFeatures(trainData_[0]).to(device = cuda_device)
         validOtherFeatures = getOtherFeatures(validData_[0]).to(device = cuda_device)
@@ -474,9 +482,33 @@ if includeOtherFeatures:
     print(f"nan values valid: {np.any(torch.isnan(validNormalizedFeatures).cpu().numpy())}")
 
 
+# In[22]:
+
+
+# # test shape
+# assert (trainNormalizedFeatures.shape == trainOtherFeaturesArray.shape)
+# assert (validNormalizedFeatures.shape == validOtherFeaturesArray.shape)
+# print(trainNormalizedFeatures.shape)
+# print(validNormalizedFeatures.shape)
+
+# # test man values on normalized
+# print(torch.mean(torch.from_numpy(trainOtherFeaturesArray), dim = 0))
+# print(torch.mean(trainNormalizedFeatures, dim = 0))
+
+# print(torch.mean(torch.from_numpy(validOtherFeaturesArray), dim = 0))
+# print(torch.mean(validNormalizedFeatures, dim = 0))
+
+# # test max values on normalized
+# print(torch.max(torch.from_numpy(trainOtherFeaturesArray), dim = 0))
+# print(torch.max(trainNormalizedFeatures, dim = 0))
+
+# print(torch.max(torch.from_numpy(validOtherFeaturesArray), dim = 0))
+# print(torch.max(validNormalizedFeatures, dim = 0))
+
+
 # ## Create experiment parameters file
 
-# In[21]:
+# In[23]:
 
 
 # store varibales on file
@@ -490,7 +522,7 @@ if trainingOnGuanaco or trainWithJustPython:
 
 # ## Defining parameters to Autoencoder
 
-# In[22]:
+# In[24]:
 
 
 # check number of parameters
@@ -533,7 +565,7 @@ else:
     print("creating model with default parameters")
 
 
-# In[23]:
+# In[25]:
 
 
 print(model)
@@ -541,7 +573,7 @@ print(model)
 
 # ### Training
 
-# In[25]:
+# In[26]:
 
 
 from sklearn.metrics import f1_score
@@ -616,13 +648,16 @@ for nepoch in range(epochs):
         data = generateDeltas(data_[0], passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
             
         # add other features
-        # [batch size, features]
+        # [batch size, features dim]
         if includeOtherFeatures:
             
+            # index to include batch data
             trainLastIndex_ = trainLastIndex + data_[0].shape[0]
 
+            # get only the normalized data from the batch (by indexation)
             otherFeatures = trainNormalizedFeatures[trainLastIndex : trainLastIndex_, :].to(device = cuda_device)
-        
+            
+            # update index 
             trainLastIndex = trainLastIndex_
             
             # validate data
@@ -688,13 +723,13 @@ for nepoch in range(epochs):
     # minibatches
     for data_ in validationLoader:
         
-#         data = data_[0]
         labels = data_[1].to(device = cuda_device)
             
         # get deltas
         data = generateDeltas(data_[0], passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
     
-    
+        
+        # inlcude other features
         if includeOtherFeatures:
             
             validLastIndex_ = validLastIndex + data_[0].shape[0]
@@ -703,6 +738,11 @@ for nepoch in range(epochs):
         
             validLastIndex = validLastIndex_
             
+            # validate data
+            if np.any(torch.isnan(otherFeatures).cpu().numpy()):
+                
+                print(f"other features with nan values in epoch {nepoch}")
+                
             # get model output
             outputs = model.forward(data, includeDeltaErrors, otherFeatures)
         
@@ -879,7 +919,13 @@ sys.exit("Exit from code, because we are in cluster or running locally. Training
 get_ipython().system('cat ../experiments/14/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[ ]:
+# In[9]:
+
+
+folder_path
+
+
+# In[10]:
 
 
 # load losses array
