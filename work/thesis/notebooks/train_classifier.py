@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = False
+trainingOnGuanaco = True
 
 # train without notebook
 trainWithJustPython = False
@@ -762,7 +762,7 @@ for nepoch in range(epochs):
         epoch_test_loss += loss.item()
 
         # f1 score
-        f1Score += f1_score(mapLabels(labels, only_these_labels).cpu().numpy(), torch.argmax(outputs, 1).cpu().numpy(), average = "micro")
+        f1Score += f1_score(mapLabels(labels, only_these_labels).cpu().numpy(), torch.argmax(outputs, 1).cpu().numpy(), average = "weighted")
         
         
         # batch counter
@@ -919,13 +919,13 @@ sys.exit("Exit from code, because we are in cluster or running locally. Training
 get_ipython().system('cat ../experiments/14/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[7]:
+# In[ ]:
 
 
 folder_path
 
 
-# In[9]:
+# In[ ]:
 
 
 # load losses array
@@ -940,7 +940,7 @@ print(folder_path)
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
 
-maxPlot = 2000
+maxPlot = 3000
 
 # loss
 ax[0].set_xlabel("N° epoch")
