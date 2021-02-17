@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[4]:
+# In[1]:
 
 
 # training on guanaco
@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
 trainWithJustPython = False
@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 15
+number_experiment = 14
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
@@ -56,7 +56,7 @@ includeOtherFeatures = True
 otherFeaturesDim = 12
 
 
-# In[5]:
+# In[2]:
 
 
 # cuda device
@@ -90,14 +90,14 @@ batch_training_size = 128
 threshold_early_stop = 3000
 
 
-# In[6]:
+# In[3]:
 
 
 # training params
-learning_rate = 1e-4
+learning_rate = 1e-3
 
 
-# In[7]:
+# In[4]:
 
 
 # add general comment about experiment 
@@ -109,7 +109,7 @@ print(comment)
 
 # # Import libraries
 
-# In[8]:
+# In[5]:
 
 
 import pandas as pd
@@ -154,7 +154,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[9]:
+# In[6]:
 
 
 import os
@@ -919,13 +919,13 @@ sys.exit("Exit from code, because we are in cluster or running locally. Training
 get_ipython().system('cat ../experiments/14/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[9]:
+# In[7]:
 
 
 folder_path
 
 
-# In[10]:
+# In[9]:
 
 
 # load losses array
@@ -940,7 +940,7 @@ print(folder_path)
 # plot losses
 fig, ax = plt.subplots(1, 2, figsize = (10,4), tight_layout = True)
 
-maxPlot = 3000
+maxPlot = 2000
 
 # loss
 ax[0].set_xlabel("N° epoch")
