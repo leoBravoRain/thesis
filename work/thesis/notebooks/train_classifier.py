@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 16
+number_experiment = 15
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
@@ -49,7 +49,7 @@ passband = [0, 1, 2, 3, 4, 5]
 
 
 # include ohter feautures
-includeOtherFeatures = False
+includeOtherFeatures = True
 
 # num of features to add
 # ṕvar by channel
@@ -94,7 +94,7 @@ threshold_early_stop = 3000
 
 
 # training params
-learning_rate = 1e-4
+learning_rate = 1e-3
 
 
 # In[4]:
@@ -362,6 +362,10 @@ trainLoader = torch.utils.data.DataLoader(
         seed = seed
 #         indices = [0, 1, 2]
     ),
+#     sampler = torch.utils.data.SubsetRandomSampler(
+#         trainIdx,
+#         generator = torch.Generator().manual_seed(seed)
+#     ),
     # each worker retrieve data from disk, so the data will be ready to be processed by main process. The main process should get the data from disk, so if workers > 0, the workers will get the data (not the main process)
     num_workers = 4,
     
@@ -378,10 +382,17 @@ validationLoader = torch.utils.data.DataLoader(
     batch_size= batch_training_size,  
     num_workers = 4,
     pin_memory = True,
-    sampler = torch.utils.data.SubsetRandomSampler(
-        valIdx,
-        generator = torch.Generator().manual_seed(seed)
-    ),
+    sampler = valIdx,
+#     sampler = torch.utils.data.SubsetRandomSampler(
+#         valIdx,
+#         generator = torch.Generator().manual_seed(seed)
+#     ),
+#     sampler=ImbalancedDatasetSampler(
+#         torch_dataset_lazy, 
+#         indices = valIdx,
+#         seed = seed
+# #         indices = [0, 1, 2]
+#     ),
 )
 
 # # test loader
@@ -392,10 +403,11 @@ testLoader = torch.utils.data.DataLoader(
 #     batch_size= batch_training_size,  
     num_workers = 4,
     pin_memory = True,
-    sampler = torch.utils.data.SubsetRandomSampler(
-        testIdx,
-        generator = torch.Generator().manual_seed(seed)
-    ),
+    sampler = testIdx,
+#     sampler = torch.utils.data.SubsetRandomSampler(
+#         testIdx,
+#         generator = torch.Generator().manual_seed(seed)
+#     ),
 )
 
 
@@ -432,14 +444,6 @@ saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size,
 # In[20]:
 
 
-print(train_size)
-
-print(validation_size)
-
-
-# In[21]:
-
-
 if includeOtherFeatures:
     
     # save features
@@ -451,25 +455,42 @@ if includeOtherFeatures:
     trainLastIndex = 0
     validLastIndex = 0
     
-    for trainData_, validData_ in zip(trainLoader, validationLoader):
-
+    for trainData_ in trainLoader:
+        
         # get other features by batch
         # [batch size, features]
         trainOtherFeatures = getOtherFeatures(trainData_[0]).to(device = cuda_device)
-        validOtherFeatures = getOtherFeatures(validData_[0]).to(device = cuda_device)
 
         # indexation
         trainLastIndex_ = trainLastIndex + trainData_[0].shape[0]
-        validLastIndex_ = validLastIndex + validData_[0].shape[0]
         
         # save features in array indexing them
         trainOtherFeaturesArray[trainLastIndex : trainLastIndex_] = trainOtherFeatures.cpu().numpy()
-        validOtherFeaturesArray[validLastIndex : validLastIndex_] = validOtherFeatures.cpu().numpy()
             
         # update indexs
         trainLastIndex = trainLastIndex_
-        validLastIndex = validLastIndex_
+    
+    # test size
+    assert trainLastIndex == train_size
+    
+    for validData_ in validationLoader:
         
+        # get other features by batch
+        # [batch size, features]
+        validOtherFeatures = getOtherFeatures(validData_[0]).to(device = cuda_device)
+
+        # indexation
+        validLastIndex_ = validLastIndex + validData_[0].shape[0]
+        
+        # save features in array indexing them
+        validOtherFeaturesArray[validLastIndex : validLastIndex_] = validOtherFeatures.cpu().numpy()
+            
+        # update indexs
+        validLastIndex = validLastIndex_
+    
+    # test size
+    assert validLastIndex == validation_size
+    
     print("finish to get other features")
     
     print("normalize features")
@@ -482,7 +503,7 @@ if includeOtherFeatures:
     print(f"nan values valid: {np.any(torch.isnan(validNormalizedFeatures).cpu().numpy())}")
 
 
-# In[22]:
+# In[21]:
 
 
 # # test shape
@@ -508,7 +529,7 @@ if includeOtherFeatures:
 
 # ## Create experiment parameters file
 
-# In[23]:
+# In[22]:
 
 
 # store varibales on file
@@ -522,7 +543,7 @@ if trainingOnGuanaco or trainWithJustPython:
 
 # ## Defining parameters to Autoencoder
 
-# In[24]:
+# In[23]:
 
 
 # check number of parameters
@@ -565,7 +586,7 @@ else:
     print("creating model with default parameters")
 
 
-# In[25]:
+# In[24]:
 
 
 print(model)
@@ -573,7 +594,7 @@ print(model)
 
 # ### Training
 
-# In[26]:
+# In[25]:
 
 
 from sklearn.metrics import f1_score
@@ -762,7 +783,11 @@ for nepoch in range(epochs):
         epoch_test_loss += loss.item()
 
         # f1 score
-        f1Score += f1_score(mapLabels(labels, only_these_labels).cpu().numpy(), torch.argmax(outputs, 1).cpu().numpy(), average = "weighted")
+        f1Score += f1_score(
+            mapLabels(labels, only_these_labels).cpu().numpy(), 
+            torch.argmax(outputs, 1).cpu().numpy(), 
+            average = "weighted"
+        )
         
         
         # batch counter
@@ -916,7 +941,7 @@ sys.exit("Exit from code, because we are in cluster or running locally. Training
 # In[ ]:
 
 
-get_ipython().system('cat ../experiments/14/seed0/maxClass15k/experimentParameters.txt')
+get_ipython().system('cat ../experiments/16/seed0/maxClass15k/experimentParameters.txt')
 
 
 # In[ ]:
@@ -965,7 +990,7 @@ ax[1].plot(f1Scores.iloc[:maxPlot])
 # In[ ]:
 
 
-get_ipython().system('cat ../experiments/14/seed0/maxClass15k/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/15/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
 # In[ ]:
