@@ -94,7 +94,7 @@ threshold_early_stop = 3000
 
 
 # training params
-learning_rate = 1e-3
+learning_rate = 1e-4
 
 
 # In[4]:
