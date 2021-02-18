@@ -37,10 +37,10 @@ class EncoderClassifier(torch.nn.Module):
         self.activationConv = torch.nn.ReLU()
     
         # this works well.(comparing with relu)
-        self.activationLinear = torch.nn.Tanh()
+#        self.activationLinear = torch.nn.Tanh()
 
 #         # this is getting nan values
-#         self.activationLinear = torch.nn.ReLU()
+        self.activationLinear = torch.nn.ReLU()
         
         # inlcude other features bool
         self.includeOtherFeatures = includeOtherFeatures

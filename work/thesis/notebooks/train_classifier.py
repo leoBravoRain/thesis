@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 15
+number_experiment = 14
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
