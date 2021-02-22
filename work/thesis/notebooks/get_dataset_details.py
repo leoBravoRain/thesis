@@ -154,7 +154,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[ ]:
+# In[6]:
 
 
 import os
@@ -199,7 +199,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[13]:
+# In[8]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -208,27 +208,27 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 # lc_data, lc_label, lc_plasticc_id                              
 torch_dataset_lazy = get_plasticc_datasets(
     pathToFile, 
-#     only_these_labels = only_these_labels, 
+    only_these_labels = only_these_labels, 
     max_elements_per_class = max_elements_per_class
 )
 
 
-# In[14]:
+# In[9]:
 
 
 assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
 print("dataset test ok")
 
 
-# In[18]:
+# In[14]:
 
 
-torch_dataset_lazy.__len__()
+print(torch_dataset_lazy.__len__())
 
 
 # # Spliting data (train/test)
 
-# In[19]:
+# In[11]:
 
 
 # splitting the data
@@ -239,7 +239,7 @@ ids, targets, lightCurvesIds = getLightCurvesIds(torch_dataset_lazy)
 
 # ## Create a dataloader
 
-# In[38]:
+# In[12]:
 
 
 # print("initila distribution")
@@ -260,7 +260,7 @@ for i in np.arange(len(values)):
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[31]:
+# In[13]:
 
 
 print(np.sum(counting))
