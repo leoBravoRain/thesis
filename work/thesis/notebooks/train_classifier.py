@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[10]:
 
 
 # training on guanaco
@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 17
+number_experiment = 18
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
@@ -49,14 +49,14 @@ passband = [0, 1, 2, 3, 4, 5]
 
 
 # include ohter feautures
-includeOtherFeatures = True
+includeOtherFeatures = False
 
 # num of features to add
 # ṕvar by channel
 otherFeaturesDim = 12
 
 
-# In[2]:
+# In[11]:
 
 
 # cuda device
@@ -87,17 +87,17 @@ inputDim = 72
 batch_training_size = 128
 
 # early stopping 
-threshold_early_stop = 3000
+threshold_early_stop = 1500
 
 
-# In[3]:
+# In[12]:
 
 
 # training params
 learning_rate = 1e-4
 
 
-# In[4]:
+# In[13]:
 
 
 # add general comment about experiment 
@@ -109,7 +109,7 @@ print(comment)
 
 # # Import libraries
 
-# In[5]:
+# In[14]:
 
 
 import pandas as pd
@@ -133,7 +133,7 @@ else:
 import sys
 sys.path.append("./codesToDatasets")
 from plasticc_dataset_torch import get_plasticc_datasets
-# from plasticc_plotting import plot_light_curve
+from plasticc_plotting import plot_light_curve
 
 import math
 
@@ -154,7 +154,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[6]:
+# In[15]:
 
 
 import os
@@ -190,7 +190,7 @@ pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (t
 
 # # Load data
 
-# In[7]:
+# In[16]:
 
 
 # define path to dataset
@@ -216,9 +216,35 @@ assert torch_dataset_lazy.__len__() != 494096, "dataset should be smaller"
 print("dataset test ok")
 
 
+# # plot light curve
+
+# In[48]:
+
+
+lc_data, label, lc_id = torch_dataset_lazy.__getitem__(1300)
+
+# 11 was good
+
+fig, ax = plt.subplots(figsize= (8,6), tight_layout=True)
+for band, band_name in enumerate('ugrizY'):
+    mask = lc_data[band, 3, :] == 1
+    mjd, flux, flux_err = lc_data[band, :3, mask]
+    ax.errorbar(mjd, flux, flux_err, fmt='.', label=band_name)
+ax.legend()
+ax.set_ylabel('Flux', fontsize = 20)
+ax.set_xlabel('Modified Julian Data', fontsize = 20)
+ax.set_title(f'PLAsTiCC ID: {lc_id} Label: {label}', fontsize = 20)
+
+
+# In[50]:
+
+
+fig.savefig("lightCurve.pdf", bbox_inches='tight')
+
+
 # # Spliting data (train/test)
 
-# In[10]:
+# In[38]:
 
 
 # splitting the data
@@ -260,14 +286,14 @@ valIdx = valIdx.astype(int)
 testIdx = testIdx.astype(int)
 
 
-# In[11]:
+# In[39]:
 
 
 # saving ids
 saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightCurvesIds, targets)
 
 
-# In[12]:
+# In[40]:
 
 
 # # load ids dictionary
@@ -276,7 +302,7 @@ saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, folder_path, lightC
 # print(output)
 
 
-# In[13]:
+# In[41]:
 
 
 # # analize classes distributino
@@ -287,7 +313,7 @@ ax[1].hist(targets[valIdx])
 ax[2].hist(targets[testIdx])
 
 
-# In[14]:
+# In[42]:
 
 
 # # Spliting the data
@@ -333,7 +359,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 
 # ## Create a dataloader
 
-# In[15]:
+# In[43]:
 
 
 print("initila distribution")
@@ -346,7 +372,7 @@ print(initialClassesDistribution)
 # ax.bar(x = np.arange(len(only_these_labels)), height = initialClassesDistribution)
 
 
-# In[16]:
+# In[44]:
 
 
 # # Create data loader (minibatches)
@@ -411,7 +437,7 @@ testLoader = torch.utils.data.DataLoader(
 )
 
 
-# In[17]:
+# In[45]:
 
 
 print("balanced distribution")
@@ -423,14 +449,14 @@ print(balancedClassesDistribution)
 # ax.bar(x = only_these_labels, height = temp2, width = 10)
 
 
-# In[18]:
+# In[ ]:
 
 
 # save ids of dataset to use (train, test and validation)
 saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size, validationLoader, validation_size, path = folder_path)
 
 
-# In[19]:
+# In[ ]:
 
 
 # # load ids dictionary
@@ -441,7 +467,7 @@ saveLightCurvesIdsAfterBalancing(trainLoader, train_size, testLoader, test_size,
 
 # # Get other features
 
-# In[20]:
+# In[ ]:
 
 
 if includeOtherFeatures:
@@ -503,7 +529,7 @@ if includeOtherFeatures:
     print(f"nan values valid: {np.any(torch.isnan(validNormalizedFeatures).cpu().numpy())}")
 
 
-# In[21]:
+# In[ ]:
 
 
 # # test shape
@@ -529,7 +555,7 @@ if includeOtherFeatures:
 
 # ## Create experiment parameters file
 
-# In[22]:
+# In[ ]:
 
 
 # store varibales on file
@@ -938,19 +964,13 @@ sys.exit("Exit from code, because we are in cluster or running locally. Training
 
 # # Analyzing training
 
-# In[ ]:
+# In[7]:
 
 
-get_ipython().system('cat ../experiments/16/seed0/maxClass15k/experimentParameters.txt')
+get_ipython().system('cat ../experiments/17/seed0/maxClass15k/experimentParameters.txt')
 
 
-# In[ ]:
-
-
-folder_path
-
-
-# In[ ]:
+# In[8]:
 
 
 # load losses array
@@ -987,10 +1007,10 @@ ax[1].plot(f1Scores.iloc[:maxPlot])
 # ax[1].scatter(bestModelEpoch, f1Scores.iloc[bestModelEpoch], c = "r", linewidths = 10)
 
 
-# In[ ]:
+# In[9]:
 
 
-get_ipython().system('cat ../experiments/15/seed0/maxClass15k/bestScoresModelTraining.txt')
+get_ipython().system('cat ../experiments/17/seed0/maxClass15k/bestScoresModelTraining.txt')
 
 
 # In[ ]:
