@@ -25,14 +25,14 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 10
+number_experiment = 18
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
 seed = 0
 
-# # training
-# epochs = 100000
+# training
+epochs = 100000
 
 # max elements by class
 max_elements_per_class = 15000
@@ -46,6 +46,14 @@ includeDeltaErrors = True
 # band
 # passband = [5]
 passband = [0, 1, 2, 3, 4, 5]
+
+
+# include ohter feautures
+includeOtherFeatures = False
+
+# num of features to add
+# ṕvar by channel
+otherFeaturesDim = 12
 
 
 # In[2]:
@@ -113,13 +121,19 @@ from torch.utils import data
 
 # from tqdm import tqdm_notebook
 
-# %matplotlib notebook
-
+if not trainingOnGuanaco:
+    
+    get_ipython().run_line_magic('matplotlib', 'notebook')
+    get_ipython().run_line_magic('load_ext', 'autoreload')
+    get_ipython().run_line_magic('autoreload', '2')
+else:
+    print("not load magics")
+    
 # import functions to load dataset
 import sys
 sys.path.append("./codesToDatasets")
 from plasticc_dataset_torch import get_plasticc_datasets
-# from plasticc_plotting import plot_light_curve
+from plasticc_plotting import plot_light_curve
 
 import math
 
@@ -155,20 +169,20 @@ folder_path = (tmpGuanaco + expPath) if trainingOnGuanaco else (tmpLocal + expPa
 # !mkdir folder_path
 # os.makedirs(os.path.dirname(folder_path), exist_ok=True)
 
-# check if folder exists
-if not(os.path.isdir(folder_path)):
+# # check if folder exists
+# if not(os.path.isdir(folder_path)):
         
-    # create folder
-    try:
-        os.makedirs(folder_path)
+#     # create folder
+#     try:
+#         os.makedirs(folder_path)
         
-    except OSError as error:
-        print ("Creation of the directory %s failed" % folder_path)
-        print(error)
-    else:
-        print ("Successfully created the directory %s " % folder_path)
-else:
-    print("folder already exists")
+#     except OSError as error:
+#         print ("Creation of the directory %s failed" % folder_path)
+#         print(error)
+#     else:
+#         print ("Successfully created the directory %s " % folder_path)
+# else:
+#     print("folder already exists")
 
 # define paht to save model while training
 pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (tmpLocal + expPath + "/model")
@@ -341,7 +355,7 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 # In[17]:
 
 
-# # Create data loader (minibatches)
+# # # Create data loader (minibatches)
 
 # training loader
 trainLoader = torch.utils.data.DataLoader(
@@ -354,6 +368,10 @@ trainLoader = torch.utils.data.DataLoader(
         seed = seed
 #         indices = [0, 1, 2]
     ),
+#     sampler = torch.utils.data.SubsetRandomSampler(
+#         trainIdx,
+#         generator = torch.Generator().manual_seed(seed)
+#     ),
     # each worker retrieve data from disk, so the data will be ready to be processed by main process. The main process should get the data from disk, so if workers > 0, the workers will get the data (not the main process)
     num_workers = 4,
     
@@ -370,10 +388,17 @@ validationLoader = torch.utils.data.DataLoader(
     batch_size= batch_training_size,  
     num_workers = 4,
     pin_memory = True,
-    sampler = torch.utils.data.SubsetRandomSampler(
-        valIdx,
-        generator = torch.Generator().manual_seed(seed)
-    ),
+    sampler = valIdx,
+#     sampler = torch.utils.data.SubsetRandomSampler(
+#         valIdx,
+#         generator = torch.Generator().manual_seed(seed)
+#     ),
+#     sampler=ImbalancedDatasetSampler(
+#         torch_dataset_lazy, 
+#         indices = valIdx,
+#         seed = seed
+# #         indices = [0, 1, 2]
+#     ),
 )
 
 # # test loader
@@ -384,11 +409,8 @@ testLoader = torch.utils.data.DataLoader(
 #     batch_size= batch_training_size,  
     num_workers = 4,
     pin_memory = True,
-    
-    # return same ids as before balancing
     sampler = testIdx,
 #     sampler = torch.utils.data.SubsetRandomSampler(
-#     sampler = SubsetRandomSamplerCustom(
 #         testIdx,
 #         generator = torch.Generator().manual_seed(seed)
 #     ),
@@ -502,11 +524,109 @@ print(model)
 
 # # Get own model predictions
 
+# # Train
+
 # In[26]:
 
 
 # class predictions
-modelPredictions = np.zeros(shape = (test_size,))
+trainModelPredictions = np.zeros(shape = (train_size,))
+
+# lc ids
+trainIds = np.zeros(shape = (train_size,))
+
+# test labels
+trainLabels = np.zeros(shape = (train_size,))
+
+print("getting predictions on train")
+
+index = 0
+    
+# iterate on test dataset
+for data_ in trainLoader:
+        
+        # index to include batch data
+        index_ = index + data_[0].shape[0]
+
+        data = data_[0]
+
+        # this take the deltas (time and magnitude)
+        data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
+            
+        # get model output
+        outputs = model.forward(data, includeDeltaErrors)
+        
+        # get model predictions
+        trainModelPredictions[index : index_] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
+        
+        # get lc ids
+        trainIds[index : index_] = data_[2]
+        
+        # save labels
+        trainLabels[index : index_] = data_[1]
+        
+        # update index 
+        index = index_
+        
+        
+print("predictions ready")
+
+
+# # Validation
+
+# In[31]:
+
+
+# class predictions
+validModelPredictions = np.zeros(shape = (validation_size,))
+
+# lc ids
+validIds = np.zeros(shape = (validation_size,))
+
+# test labels
+validLabels = np.zeros(shape = (validation_size,))
+
+print("getting predictions on validtion")
+
+index = 0
+
+# iterate on test dataset
+for data_ in (validationLoader):
+        
+        # index to include batch data
+        index_ = index + data_[0].shape[0]
+        
+        data = data_[0]
+
+        # this take the deltas (time and magnitude)
+        data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
+            
+        # get model output
+        outputs = model.forward(data, includeDeltaErrors)
+        
+        # get model predictions
+        validModelPredictions[index : index_] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
+        
+        # get lc ids
+        validIds[index : index_] = data_[2]
+        
+        # save labels
+        validLabels[index : index_] = data_[1]
+        
+        # update index 
+        index = index_
+        
+        
+print("predictions ready")
+
+
+# # Test
+
+# In[33]:
+
+
+# class predictions
+testModelPredictions = np.zeros(shape = (test_size,))
 
 # lc ids
 testIds = np.zeros(shape = (test_size,))
@@ -514,7 +634,7 @@ testIds = np.zeros(shape = (test_size,))
 # test labels
 testLabels = np.zeros(shape = (test_size,))
 
-print("getting predictions")
+print("getting predictions on test")
 
 # iterate on test dataset
 for idx, data_ in enumerate(testLoader):
@@ -528,7 +648,7 @@ for idx, data_ in enumerate(testLoader):
         outputs = model.forward(data, includeDeltaErrors)
         
         # get model predictions
-        modelPredictions[idx] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
+        testModelPredictions[idx] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
         
         # get lc ids
         testIds[idx] = data_[2]
@@ -541,18 +661,57 @@ for idx, data_ in enumerate(testLoader):
 print("predictions ready")
 
 
-# In[27]:
+# In[37]:
+
+
+print(trainIds[:3])
+print(trainLabels[:3])
+print(trainModelPredictions[:3])
+
+
+# In[38]:
+
+
+print(validIds[:3])
+print(validLabels[:3])
+print(validModelPredictions[:3])
+
+
+# In[39]:
+
+
+print(testIds[:3])
+print(testLabels[:3])
+print(testModelPredictions[:3])
+
+
+# In[41]:
 
 
 # save results
 results = {
+    
+    # train
+    "trainIds": trainIds,
+    "trainLabels": trainLabels,
+    "trainPredictions": trainModelPredictions,
+    
+     # validation
+    "validIds": validIds,
+    "validLabels": validLabels,
+    "validPredictions": validModelPredictions,
+    
+    
+    # test
     "testIds": testIds,
     "testLabels": testLabels,
-    "testPredictions": modelPredictions,
+    "testPredictions": testModelPredictions,
+    
+    
 }
 
 # save object
-a_file = open("../experiments/comparingModels/seed" + str(seed) + "/ownModel/testOwnModelPredictions.pkl", "wb")
+a_file = open("../experiments/comparingModels/seed" + str(seed) + "/ownModel/OwnModelPredictions.pkl", "wb")
 pickle.dump(results, a_file)
 a_file.close()
 
