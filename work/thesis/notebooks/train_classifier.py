@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[10]:
+# In[16]:
 
 
 # training on guanaco
@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 18
+number_experiment = 19
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
@@ -41,7 +41,7 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = True
+includeDeltaErrors = False
 
 # band
 # passband = [5]
@@ -56,7 +56,7 @@ includeOtherFeatures = False
 otherFeaturesDim = 12
 
 
-# In[11]:
+# In[17]:
 
 
 # cuda device
@@ -90,14 +90,14 @@ batch_training_size = 128
 threshold_early_stop = 1500
 
 
-# In[12]:
+# In[18]:
 
 
 # training params
 learning_rate = 1e-4
 
 
-# In[13]:
+# In[19]:
 
 
 # add general comment about experiment 
@@ -109,7 +109,7 @@ print(comment)
 
 # # Import libraries
 
-# In[14]:
+# In[20]:
 
 
 import pandas as pd
@@ -154,7 +154,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[15]:
+# In[21]:
 
 
 import os
@@ -221,25 +221,25 @@ print("dataset test ok")
 # In[48]:
 
 
-lc_data, label, lc_id = torch_dataset_lazy.__getitem__(1300)
+# lc_data, label, lc_id = torch_dataset_lazy.__getitem__(1300)
 
-# 11 was good
+# # 11 was good
 
-fig, ax = plt.subplots(figsize= (8,6), tight_layout=True)
-for band, band_name in enumerate('ugrizY'):
-    mask = lc_data[band, 3, :] == 1
-    mjd, flux, flux_err = lc_data[band, :3, mask]
-    ax.errorbar(mjd, flux, flux_err, fmt='.', label=band_name)
-ax.legend()
-ax.set_ylabel('Flux', fontsize = 20)
-ax.set_xlabel('Modified Julian Data', fontsize = 20)
-ax.set_title(f'PLAsTiCC ID: {lc_id} Label: {label}', fontsize = 20)
+# fig, ax = plt.subplots(figsize= (8,6), tight_layout=True)
+# for band, band_name in enumerate('ugrizY'):
+#     mask = lc_data[band, 3, :] == 1
+#     mjd, flux, flux_err = lc_data[band, :3, mask]
+#     ax.errorbar(mjd, flux, flux_err, fmt='.', label=band_name)
+# ax.legend()
+# ax.set_ylabel('Flux', fontsize = 20)
+# ax.set_xlabel('Modified Julian Data', fontsize = 20)
+# ax.set_title(f'PLAsTiCC ID: {lc_id} Label: {label}', fontsize = 20)
 
 
 # In[50]:
 
 
-fig.savefig("lightCurve.pdf", bbox_inches='tight')
+# fig.savefig("lightCurve.pdf", bbox_inches='tight')
 
 
 # # Spliting data (train/test)
@@ -967,7 +967,7 @@ sys.exit("Exit from code, because we are in cluster or running locally. Training
 # In[7]:
 
 
-get_ipython().system('cat ../experiments/17/seed0/maxClass15k/experimentParameters.txt')
+get_ipython().system('cat ../experiments/18/seed0/maxClass15k/experimentParameters.txt')
 
 
 # In[8]:
