@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
 trainWithJustPython = False
@@ -87,14 +87,14 @@ inputDim = 72
 batch_training_size = 128
 
 # early stopping 
-threshold_early_stop = 1000
+threshold_early_stop = 1500
 
 
 # In[3]:
 
 
 # training params
-learning_rate = 1e-3
+learning_rate = 1e-4
 
 
 # In[4]:
@@ -355,12 +355,12 @@ assert torch_dataset_lazy.__len__() == totTmp, "dataset partition should be the 
 # In[17]:
 
 
-# # # Create data loader (minibatches)
+# # Create data loader (minibatches)
 
 # training loader
 trainLoader = torch.utils.data.DataLoader(
     torch_dataset_lazy, 
-    batch_size = batch_training_size, 
+#     batch_size = batch_training_size, 
     # to balance classes
     sampler=ImbalancedDatasetSampler(
         torch_dataset_lazy, 
@@ -385,7 +385,7 @@ trainLoader = torch.utils.data.DataLoader(
 validationLoader = torch.utils.data.DataLoader(
 #     validationDataset, 
     torch_dataset_lazy,
-    batch_size= batch_training_size,  
+#     batch_size= batch_training_size,  
     num_workers = 4,
     pin_memory = True,
     sampler = valIdx,
@@ -508,7 +508,16 @@ if trainWithPreviousModel:
 else:
     
     # defining model
-    model = EncoderClassifier(latent_dim = latentDim, hidden_dim = hiddenDim, input_dim = inputDim, num_classes = num_classes, passband = passband, includeDeltaErrors = includeDeltaErrors)
+    model = EncoderClassifier(
+        latent_dim = latentDim, 
+        hidden_dim = hiddenDim, 
+        input_dim = inputDim, 
+        num_classes = num_classes, 
+        passband = passband, 
+        includeDeltaErrors = includeDeltaErrors,
+        includeOtherFeatures = includeOtherFeatures,
+        otherFeaturesDim = otherFeaturesDim,
+    )
 
     # mdel to GPU
     model = model.to(device = cuda_device)
@@ -540,13 +549,14 @@ trainLabels = np.zeros(shape = (train_size,))
 
 print("getting predictions on train")
 
-index = 0
+# index = 0
     
 # iterate on test dataset
-for data_ in trainLoader:
+# for data_ in trainLoader:
+for idx, data_ in enumerate(trainLoader):
         
-        # index to include batch data
-        index_ = index + data_[0].shape[0]
+#         # index to include batch data
+#         index_ = index + data_[0].shape[0]
 
         data = data_[0]
 
@@ -556,25 +566,57 @@ for data_ in trainLoader:
         # get model output
         outputs = model.forward(data, includeDeltaErrors)
         
+#         # get model predictions
+#         trainModelPredictions[index : index_] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
+        
+#         # get lc ids
+#         trainIds[index : index_] = data_[2]
+        
+#         # save labels
+#         trainLabels[index : index_] = data_[1]
+        
+#         # update index 
+#         index = index_
+        
         # get model predictions
-        trainModelPredictions[index : index_] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
+        trainModelPredictions[idx] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
         
         # get lc ids
-        trainIds[index : index_] = data_[2]
+        trainIds[idx] = data_[2]
         
         # save labels
-        trainLabels[index : index_] = data_[1]
-        
-        # update index 
-        index = index_
+        trainLabels[idx] = data_[1]
         
         
 print("predictions ready")
 
 
+# In[27]:
+
+
+# # debugging
+# print(np.unique(trainModelPredictions, return_counts=True)[0])
+
+# print(np.unique(trainModelPredictions, return_counts=True)[1])
+
+
+# In[28]:
+
+
+# debugging
+
+from sklearn.metrics import accuracy_score, f1_score
+
+f1_score(
+    trainLabels, 
+    trainModelPredictions,
+    average = "weighted"
+)
+
+
 # # Validation
 
-# In[31]:
+# In[29]:
 
 
 # class predictions
@@ -588,13 +630,14 @@ validLabels = np.zeros(shape = (validation_size,))
 
 print("getting predictions on validtion")
 
-index = 0
+# index = 0
 
 # iterate on test dataset
-for data_ in (validationLoader):
-        
-        # index to include batch data
-        index_ = index + data_[0].shape[0]
+# for data_ in (validationLoader):
+for idx, data_ in enumerate(validationLoader):
+    
+#         # index to include batch data
+#         index_ = index + data_[0].shape[0]
         
         data = data_[0]
 
@@ -604,25 +647,56 @@ for data_ in (validationLoader):
         # get model output
         outputs = model.forward(data, includeDeltaErrors)
         
+#         # get model predictions
+#         validModelPredictions[index : index_] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
+        
+#         # get lc ids
+#         validIds[index : index_] = data_[2]
+        
+#         # save labels
+#         validLabels[index : index_] = data_[1]
+        
+#         # update index 
+#         index = index_
+
         # get model predictions
-        validModelPredictions[index : index_] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
+        validModelPredictions[idx] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
         
         # get lc ids
-        validIds[index : index_] = data_[2]
+        validIds[idx] = data_[2]
         
         # save labels
-        validLabels[index : index_] = data_[1]
-        
-        # update index 
-        index = index_
+        validLabels[idx] = data_[1]
         
         
 print("predictions ready")
 
 
+# In[30]:
+
+
+# print(np.unique(validModelPredictions, return_counts=True)[0])
+
+# print(np.unique(validModelPredictions, return_counts=True)[1])
+
+
+# In[31]:
+
+
+# debugging
+
+from sklearn.metrics import accuracy_score, f1_score
+
+f1_score(
+    validLabels, 
+    validModelPredictions,
+    average = "weighted"
+)
+
+
 # # Test
 
-# In[33]:
+# In[32]:
 
 
 # class predictions
@@ -661,31 +735,31 @@ for idx, data_ in enumerate(testLoader):
 print("predictions ready")
 
 
-# In[37]:
+# In[33]:
 
 
-print(trainIds[:3])
-print(trainLabels[:3])
-print(trainModelPredictions[:3])
+# print(trainIds[:3])
+# print(trainLabels[:3])
+# print(trainModelPredictions[:3])
 
 
-# In[38]:
+# In[34]:
 
 
-print(validIds[:3])
-print(validLabels[:3])
-print(validModelPredictions[:3])
+# print(validIds[:3])
+# print(validLabels[:3])
+# print(validModelPredictions[:3])
 
 
-# In[39]:
+# In[35]:
 
 
-print(testIds[:3])
-print(testLabels[:3])
-print(testModelPredictions[:3])
+# print(testIds[:3])
+# print(testLabels[:3])
+# print(testModelPredictions[:3])
 
 
-# In[41]:
+# In[36]:
 
 
 # save results
@@ -711,14 +785,21 @@ results = {
 }
 
 # save object
-a_file = open("../experiments/comparingModels/seed" + str(seed) + "/ownModel/OwnModelPredictions.pkl", "wb")
-pickle.dump(results, a_file)
-a_file.close()
 
-print("model predictions saved on a file")
+if trainingOnGuanaco or trainWithJustPython:
+
+    a_file = open("../experiments/comparingModels/seed" + str(seed) + "/ownModel/OwnModelPredictions.pkl", "wb")
+    pickle.dump(results, a_file)
+    a_file.close()
+
+    print("model predictions saved on a file")
+    
+else:
+    
+    print("not save metrics")
 
 
-# In[28]:
+# In[37]:
 
 
 # load model
@@ -729,7 +810,7 @@ print("model predictions saved on a file")
 
 # ### Stop execution if it's on cluster
 
-# In[29]:
+# In[38]:
 
 
 import sys
