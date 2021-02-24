@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 19
+number_experiment = 20
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
@@ -41,11 +41,11 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = False
+includeDeltaErrors = True
 
 # band
-# passband = [5]
-passband = [0, 1, 2, 3, 4, 5]
+passband = [5]
+#passband = [0, 1, 2, 3, 4, 5]
 
 
 # include ohter feautures
