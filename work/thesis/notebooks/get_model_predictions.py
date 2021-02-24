@@ -25,11 +25,11 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 17
+number_experiment = 18
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 0
+seed = 1
 
 # training
 epochs = 100000
@@ -49,7 +49,7 @@ passband = [0, 1, 2, 3, 4, 5]
 
 
 # include ohter feautures
-includeOtherFeatures = True
+includeOtherFeatures = False
 
 # num of features to add
 # ṕvar by channel
