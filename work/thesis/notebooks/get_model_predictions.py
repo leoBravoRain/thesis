@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 18
+number_experiment = 17
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
@@ -505,24 +505,24 @@ if trainWithPreviousModel:
     
     print("loading saved model")
     
-else:
+# else:
     
-    # defining model
-    model = EncoderClassifier(
-        latent_dim = latentDim, 
-        hidden_dim = hiddenDim, 
-        input_dim = inputDim, 
-        num_classes = num_classes, 
-        passband = passband, 
-        includeDeltaErrors = includeDeltaErrors,
-        includeOtherFeatures = includeOtherFeatures,
-        otherFeaturesDim = otherFeaturesDim,
-    )
+#     # defining model
+#     model = EncoderClassifier(
+#         latent_dim = latentDim, 
+#         hidden_dim = hiddenDim, 
+#         input_dim = inputDim, 
+#         num_classes = num_classes, 
+#         passband = passband, 
+#         includeDeltaErrors = includeDeltaErrors,
+#         includeOtherFeatures = includeOtherFeatures,
+#         otherFeaturesDim = otherFeaturesDim,
+#     )
 
-    # mdel to GPU
-    model = model.to(device = cuda_device)
+#     # mdel to GPU
+#     model = model.to(device = cuda_device)
     
-    print("creating model with default parameters")
+#     print("creating model with default parameters")
 
 
 # In[25]:
@@ -788,7 +788,7 @@ results = {
 
 if trainingOnGuanaco or trainWithJustPython:
 
-    a_file = open("../experiments/comparingModels/seed" + str(seed) + "/ownModel/OwnModelPredictions.pkl", "wb")
+    a_file = open("../experiments/comparingModels/seed" + str(seed) + "/ownModel/OwnModel " + number_experiment + " Predictions.pkl", "wb")
     pickle.dump(results, a_file)
     a_file.close()
 
