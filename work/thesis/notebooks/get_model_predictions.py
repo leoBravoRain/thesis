@@ -44,12 +44,12 @@ trainWithPreviousModel = True
 includeDeltaErrors = True
 
 # band
-# passband = [5]
+#passband = [5]
 passband = [0, 1, 2, 3, 4, 5]
 
 
 # include ohter feautures
-includeOtherFeatures = False
+includeOtherFeatures = True
 
 # num of features to add
 # ṕvar by channel
@@ -102,7 +102,7 @@ learning_rate = 1e-4
 
 # add general comment about experiment 
 # comment = "encoder as clasifier with periodic + variable (with class balancing) + 1 conv layer more"
-comment = "exp " + number_experiment + " + encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors") + " + max by class " + str(max_elements_per_class)
+comment = "exp " + number_experiment + " + encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + " + str(len(passband)) + " channels + seed " + str(seed) + " + " + ("include delta errors" if includeDeltaErrors else "without delta errors") + " + max by class " + str(max_elements_per_class) + " + " + ("" if includeOtherFeatures else "not") + " other features"
 
 print(comment)
 
@@ -466,9 +466,107 @@ testLoader = torch.utils.data.DataLoader(
 # print(output["validation"])
 
 
-# ## Create experiment parameters file
+# # Get other features
 
 # In[23]:
+
+
+if includeOtherFeatures:
+    
+    # save features
+    trainOtherFeaturesArray = np.zeros(shape = (train_size, otherFeaturesDim))
+    validOtherFeaturesArray = np.zeros(shape = (validation_size, otherFeaturesDim))
+    testOtherFeaturesArray = np.zeros(shape = (test_size, otherFeaturesDim))
+
+    print("starting to get the other features")
+
+    trainLastIndex = 0
+    validLastIndex = 0
+    testLastIndex = 0
+    
+    
+    for trainData_ in trainLoader:
+        
+        # get other features by batch
+        # [batch size, features]
+        trainOtherFeatures = getOtherFeatures(trainData_[0]).to(device = cuda_device)
+
+        # indexation
+        trainLastIndex_ = trainLastIndex + trainData_[0].shape[0]
+        
+        # save features in array indexing them
+        trainOtherFeaturesArray[trainLastIndex : trainLastIndex_] = trainOtherFeatures.cpu().numpy()
+            
+        # update indexs
+        trainLastIndex = trainLastIndex_
+    
+    # test size
+    assert trainLastIndex == train_size
+    
+    for validData_ in validationLoader:
+        
+        # get other features by batch
+        # [batch size, features]
+        validOtherFeatures = getOtherFeatures(validData_[0]).to(device = cuda_device)
+
+        # indexation
+        validLastIndex_ = validLastIndex + validData_[0].shape[0]
+        
+        # save features in array indexing them
+        validOtherFeaturesArray[validLastIndex : validLastIndex_] = validOtherFeatures.cpu().numpy()
+            
+        # update indexs
+        validLastIndex = validLastIndex_
+    
+    
+    # add test
+    
+    
+    # test size
+    assert validLastIndex == validation_size
+    
+    
+    # test
+    for testData_ in testLoader:
+        
+        # get other features by batch
+        # [batch size, features]
+        testOtherFeatures = getOtherFeatures(testData_[0]).to(device = cuda_device)
+
+        # indexation
+        testLastIndex_ = testLastIndex + testData_[0].shape[0]
+        
+        # save features in array indexing them
+        testOtherFeaturesArray[testLastIndex : testLastIndex_] = testOtherFeatures.cpu().numpy()
+            
+        # update indexs
+        testLastIndex = testLastIndex_
+    
+    
+    # add test
+    
+    
+    # test size
+    assert testLastIndex_ == test_size
+    
+    
+    print("finish to get other features")
+    
+    print("normalize features")
+    # normalize features
+    trainNormalizedFeatures = torch.from_numpy(normalizeOtherFeatures(trainOtherFeaturesArray)).type(torch.FloatTensor)
+    validNormalizedFeatures = torch.from_numpy(normalizeOtherFeatures(validOtherFeaturesArray)).type(torch.FloatTensor)
+    testNormalizedFeatures = torch.from_numpy(normalizeOtherFeatures(testOtherFeaturesArray)).type(torch.FloatTensor)
+    
+    # check nan values
+    print(f"nan values train: {np.any(torch.isnan(trainNormalizedFeatures).cpu().numpy())}")
+    print(f"nan values valid: {np.any(torch.isnan(validNormalizedFeatures).cpu().numpy())}")
+    print(f"nan values valid: {np.any(torch.isnan(testNormalizedFeatures).cpu().numpy())}")
+
+
+# ## Create experiment parameters file
+
+# In[24]:
 
 
 # # store varibales on file
@@ -482,7 +580,7 @@ testLoader = torch.utils.data.DataLoader(
 
 # ## Defining parameters to Autoencoder
 
-# In[24]:
+# In[25]:
 
 
 # check number of parameters
@@ -525,7 +623,7 @@ if trainWithPreviousModel:
 #     print("creating model with default parameters")
 
 
-# In[25]:
+# In[26]:
 
 
 print(model)
@@ -535,7 +633,7 @@ print(model)
 
 # # Train
 
-# In[26]:
+# In[27]:
 
 
 # class predictions
@@ -551,6 +649,9 @@ print("getting predictions on train")
 
 # index = 0
     
+# this is for getting the other features
+trainLastIndex = 0
+    
 # iterate on test dataset
 # for data_ in trainLoader:
 for idx, data_ in enumerate(trainLoader):
@@ -563,8 +664,37 @@ for idx, data_ in enumerate(trainLoader):
         # this take the deltas (time and magnitude)
         data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
             
-        # get model output
-        outputs = model.forward(data, includeDeltaErrors)
+#         # get model output
+#         outputs = model.forward(data, includeDeltaErrors)
+        
+        # add other features
+        # [batch size, features dim]
+        if includeOtherFeatures:
+            
+            # index to include batch data
+            trainLastIndex_ = trainLastIndex + data_[0].shape[0]
+
+            # get only the normalized data from the batch (by indexation)
+            otherFeatures = trainNormalizedFeatures[trainLastIndex : trainLastIndex_, :].to(device = cuda_device)
+            
+            # update index 
+            trainLastIndex = trainLastIndex_
+            
+            # validate data
+            if np.any(torch.isnan(otherFeatures).cpu().numpy()):
+                
+                print(f"other features with nan values in epoch {nepoch}")
+            
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors, otherFeatures)
+            
+            
+        else:
+            
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors)
+        
+#         print(trainLastIndex_)
         
 #         # get model predictions
 #         trainModelPredictions[index : index_] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
@@ -591,7 +721,7 @@ for idx, data_ in enumerate(trainLoader):
 print("predictions ready")
 
 
-# In[27]:
+# In[28]:
 
 
 # # debugging
@@ -600,7 +730,7 @@ print("predictions ready")
 # print(np.unique(trainModelPredictions, return_counts=True)[1])
 
 
-# In[28]:
+# In[29]:
 
 
 # debugging
@@ -616,7 +746,7 @@ f1_score(
 
 # # Validation
 
-# In[29]:
+# In[30]:
 
 
 # class predictions
@@ -631,6 +761,7 @@ validLabels = np.zeros(shape = (validation_size,))
 print("getting predictions on validtion")
 
 # index = 0
+trainLastIndex = 0
 
 # iterate on test dataset
 # for data_ in (validationLoader):
@@ -644,9 +775,36 @@ for idx, data_ in enumerate(validationLoader):
         # this take the deltas (time and magnitude)
         data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
             
-        # get model output
-        outputs = model.forward(data, includeDeltaErrors)
+#         # get model output
+#         outputs = model.forward(data, includeDeltaErrors)
         
+        # add other features
+        # [batch size, features dim]
+        if includeOtherFeatures:
+            
+            # index to include batch data
+            trainLastIndex_ = trainLastIndex + data_[0].shape[0]
+
+            # get only the normalized data from the batch (by indexation)
+            otherFeatures = validNormalizedFeatures[trainLastIndex : trainLastIndex_, :].to(device = cuda_device)
+            
+            # update index 
+            trainLastIndex = trainLastIndex_
+            
+            # validate data
+            if np.any(torch.isnan(otherFeatures).cpu().numpy()):
+                
+                print(f"other features with nan values in epoch {nepoch}")
+            
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors, otherFeatures)
+            
+            
+        else:
+            
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors)
+            
 #         # get model predictions
 #         validModelPredictions[index : index_] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
         
@@ -672,7 +830,7 @@ for idx, data_ in enumerate(validationLoader):
 print("predictions ready")
 
 
-# In[30]:
+# In[31]:
 
 
 # print(np.unique(validModelPredictions, return_counts=True)[0])
@@ -680,7 +838,7 @@ print("predictions ready")
 # print(np.unique(validModelPredictions, return_counts=True)[1])
 
 
-# In[31]:
+# In[32]:
 
 
 # debugging
@@ -696,7 +854,7 @@ f1_score(
 
 # # Test
 
-# In[32]:
+# In[33]:
 
 
 # class predictions
@@ -710,6 +868,8 @@ testLabels = np.zeros(shape = (test_size,))
 
 print("getting predictions on test")
 
+trainLastIndex = 0
+
 # iterate on test dataset
 for idx, data_ in enumerate(testLoader):
         
@@ -718,9 +878,36 @@ for idx, data_ in enumerate(testLoader):
         # this take the deltas (time and magnitude)
         data = generateDeltas(data, passband, includeDeltaErrors).type(torch.FloatTensor).to(device = cuda_device)
             
-        # get model output
-        outputs = model.forward(data, includeDeltaErrors)
+#         # get model output
+#         outputs = model.forward(data, includeDeltaErrors)
         
+        # add other features
+        # [batch size, features dim]
+        if includeOtherFeatures:
+            
+            # index to include batch data
+            trainLastIndex_ = trainLastIndex + data_[0].shape[0]
+
+            # get only the normalized data from the batch (by indexation)
+            otherFeatures = testNormalizedFeatures[trainLastIndex : trainLastIndex_, :].to(device = cuda_device)
+            
+            # update index 
+            trainLastIndex = trainLastIndex_
+            
+            # validate data
+            if np.any(torch.isnan(otherFeatures).cpu().numpy()):
+                
+                print(f"other features with nan values in epoch {nepoch}")
+            
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors, otherFeatures)
+            
+            
+        else:
+            
+            # get model output
+            outputs = model.forward(data, includeDeltaErrors)
+            
         # get model predictions
         testModelPredictions[idx] = only_these_labels[torch.argmax(outputs, 1).cpu().numpy()[0]]
         
@@ -735,7 +922,17 @@ for idx, data_ in enumerate(testLoader):
 print("predictions ready")
 
 
-# In[33]:
+# In[34]:
+
+
+f1_score(
+    testLabels, 
+    testModelPredictions,
+    average = "weighted"
+)
+
+
+# In[35]:
 
 
 # print(trainIds[:3])
@@ -743,7 +940,7 @@ print("predictions ready")
 # print(trainModelPredictions[:3])
 
 
-# In[34]:
+# In[36]:
 
 
 # print(validIds[:3])
@@ -751,7 +948,7 @@ print("predictions ready")
 # print(validModelPredictions[:3])
 
 
-# In[35]:
+# In[37]:
 
 
 # print(testIds[:3])
@@ -759,7 +956,7 @@ print("predictions ready")
 # print(testModelPredictions[:3])
 
 
-# In[36]:
+# In[38]:
 
 
 # save results
@@ -788,7 +985,7 @@ results = {
 
 if trainingOnGuanaco or trainWithJustPython:
 
-    a_file = open("../experiments/comparingModels/seed" + str(seed) + "/ownModel/OwnModel " + number_experiment + " Predictions.pkl", "wb")
+    a_file = open("../experiments/comparingModels/seed" + str(seed) + "/ownModel/OwnModel" + number_experiment + "Predictions.pkl", "wb")
     pickle.dump(results, a_file)
     a_file.close()
 
@@ -799,7 +996,7 @@ else:
     print("not save metrics")
 
 
-# In[37]:
+# In[39]:
 
 
 # load model
@@ -810,7 +1007,7 @@ else:
 
 # ### Stop execution if it's on cluster
 
-# In[38]:
+# In[40]:
 
 
 import sys
