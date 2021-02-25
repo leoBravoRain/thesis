@@ -15,5 +15,5 @@ date
 gpu_ids=`/usr/local/bin/tarjeta_libre 1 ,`
 if [ ! -z ${gpu_ids} ]
 then
-  CUDA_VISIBLE_DEVICES=${gpu_ids} python -u get_model_predictions.py
+  CUDA_VISIBLE_DEVICES=${gpu_ids} python -u train_classifier_get_model_predictions.py
 fi

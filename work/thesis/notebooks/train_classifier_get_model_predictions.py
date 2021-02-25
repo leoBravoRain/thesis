@@ -25,11 +25,11 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 18
+number_experiment = 19
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 3
+seed = 4
 
 # training
 epochs = 100000
@@ -41,7 +41,7 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = True
+includeDeltaErrors = False
 
 # band
 # passband = [5]
