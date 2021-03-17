@@ -29,7 +29,7 @@ number_experiment = 21
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 0
+seed = 4
 
 # training
 epochs = 100000
