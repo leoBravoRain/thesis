@@ -301,7 +301,8 @@ def generate_delta_mask(mask):
     
     # generate delta mask
 #     mask_delta = mask[:, 1:].type(torch.BoolTensor) & mask[:, :-1].type(torch.BoolTensor)
-    mask_delta = mask[:, :, 1:]
+#     mask_delta = mask[:, :, 1:]
+    mask_delta = mask[:, :, :-1]
     
     return mask_delta
 

@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[1]:
+# In[35]:
 
 
 # training on guanaco
@@ -25,11 +25,11 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 19
+number_experiment = 21
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 8
+seed = 0
 
 # training
 epochs = 100000
@@ -41,7 +41,7 @@ max_elements_per_class = 15000
 trainWithPreviousModel = False
 
 # include delta errors
-includeDeltaErrors = False
+includeDeltaErrors = True
 
 # band
 # passband = [5]
@@ -56,7 +56,7 @@ includeOtherFeatures = False
 otherFeaturesDim = 12
 
 
-# In[2]:
+# In[36]:
 
 
 # cuda device
@@ -90,14 +90,14 @@ batch_training_size = 128
 threshold_early_stop = 70
 
 
-# In[3]:
+# In[37]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[4]:
+# In[38]:
 
 
 # add general comment about experiment 
@@ -109,7 +109,7 @@ print(comment)
 
 # # Import libraries
 
-# In[5]:
+# In[39]:
 
 
 import pandas as pd
@@ -154,7 +154,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[6]:
+# In[40]:
 
 
 import os
