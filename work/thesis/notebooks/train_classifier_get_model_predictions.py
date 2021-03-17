@@ -6,7 +6,7 @@
 
 # # Parameters to experiment
 
-# In[35]:
+# In[59]:
 
 
 # training on guanaco
@@ -25,11 +25,11 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 21
+number_experiment = 22
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 4
+seed = 0
 
 # training
 epochs = 100000
@@ -44,8 +44,13 @@ trainWithPreviousModel = False
 includeDeltaErrors = True
 
 # band
+passband = [0]
+# passband = [1]
+# passband = [2]
+# passband = [3]
+# passband = [4]
 # passband = [5]
-passband = [0, 1, 2, 3, 4, 5]
+# passband = [0, 1, 2, 3, 4, 5]
 
 
 # include ohter feautures
@@ -56,7 +61,7 @@ includeOtherFeatures = False
 otherFeaturesDim = 12
 
 
-# In[36]:
+# In[60]:
 
 
 # cuda device
@@ -90,14 +95,14 @@ batch_training_size = 128
 threshold_early_stop = 70
 
 
-# In[37]:
+# In[61]:
 
 
 # training params
 learning_rate = 1e-3
 
 
-# In[38]:
+# In[62]:
 
 
 # add general comment about experiment 
@@ -109,7 +114,7 @@ print(comment)
 
 # # Import libraries
 
-# In[39]:
+# In[63]:
 
 
 import pandas as pd
@@ -154,7 +159,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[40]:
+# In[64]:
 
 
 import os
@@ -190,7 +195,7 @@ pathToSaveModel = (tmpGuanaco + expPath + "/model") if trainingOnGuanaco else (t
 
 # # Load data
 
-# In[7]:
+# In[65]:
 
 
 # define path to dataset
@@ -911,7 +916,7 @@ for nepoch in range(epochs):
 print("training has finished")
 
 
-# In[28]:
+# In[ ]:
 
 
 # # get metrics on trainig dataset
@@ -953,7 +958,7 @@ print("training has finished")
 
 # # create new dataloaders
 
-# In[29]:
+# In[ ]:
 
 
 # # Create data loader (minibatches)
@@ -1020,7 +1025,7 @@ testLoader = torch.utils.data.DataLoader(
 
 # # load model
 
-# In[30]:
+# In[ ]:
 
 
 # loadgin model
@@ -1029,7 +1034,7 @@ model = torch.load(pathToSaveModel + ".txt").to(device = cuda_device)
 
 # # Train
 
-# In[31]:
+# In[ ]:
 
 
 # class predictions
@@ -1121,7 +1126,7 @@ print("predictions ready")# Get own model predictions
 
 # # validation
 
-# In[32]:
+# In[ ]:
 
 
 # class predictions
@@ -1207,7 +1212,7 @@ print("predictions ready")
 
 # # Test
 
-# In[33]:
+# In[ ]:
 
 
 # class predictions
@@ -1277,7 +1282,7 @@ print("predictions ready")
 
 # # save results
 
-# In[34]:
+# In[ ]:
 
 
 # save results
@@ -1319,7 +1324,7 @@ else:
 
 # ### Stop execution if it's on cluster
 
-# In[35]:
+# In[ ]:
 
 
 import sys
