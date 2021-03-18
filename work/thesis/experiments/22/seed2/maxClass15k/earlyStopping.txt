@@ -1,0 +1,2 @@
+Epoch: 128
+ ES counter: 70
