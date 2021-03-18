@@ -1,0 +1,16 @@
+N° experiment: 22
+ General comment: exp 22 + encoder as clasifier with periodic + variable + class balancing + 1 conv layer more + 1 channels + seed 0 + include delta errors + max by class 15000 + not other features
+ Classes: [16, 92, 53, 88, 65, 6]
+ train_size: 52360
+ validation_size: 6545
+ test_size: 6546
+ total dataset size: 65451
+ Epochs: 100000
+ Latent dimension: 100
+ Hidden dimension: 100
+ Input dimension: 72
+ Passband: [0]
+ Learning rate: 0.001
+ Batch training size: 128
+ initial train classes distribution: [ 1454 15924  1483 15981 15370 15239]
+balanced train class distribution: [8776. 8703. 8609. 8751. 8730. 8791.]
