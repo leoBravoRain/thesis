@@ -25,7 +25,7 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 26
+number_experiment = 20
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
@@ -48,8 +48,8 @@ includeDeltaErrors = True
 #passband = [1]
 #passband = [2]
 #passband = [3]
-passband = [4]
-# passband = [5]
+#passband = [4]
+passband = [5]
 # passband = [0, 1, 2, 3, 4, 5]
 
 

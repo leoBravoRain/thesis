@@ -25,11 +25,11 @@ trainWithJustPython = False
 # number_experiment (this is just a name)
 # priors:
 # 1
-number_experiment = 19
+number_experiment = 20
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 2
+seed = 1
 
 # training
 epochs = 100000
@@ -41,11 +41,11 @@ max_elements_per_class = 15000
 trainWithPreviousModel = True
 
 # include delta errors
-includeDeltaErrors = False
+includeDeltaErrors = True
 
 # band
-#passband = [5]
-passband = [0, 1, 2, 3, 4, 5]
+passband = [5]
+#passband = [0, 1, 2, 3, 4, 5]
 
 
 # include ohter feautures
@@ -87,14 +87,14 @@ inputDim = 72
 batch_training_size = 128
 
 # early stopping 
-threshold_early_stop = 1500
+threshold_early_stop = 70
 
 
 # In[3]:
 
 
 # training params
-learning_rate = 1e-4
+learning_rate = 1e-3
 
 
 # In[4]:
