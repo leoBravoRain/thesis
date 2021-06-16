@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
 trainWithJustPython = False
@@ -370,10 +370,10 @@ def getDataInformation(dataset):
 samplesByFilter, timeLength, errorMeanByFilter, fluxMeanByFilter, fluxStdByFilter, deltaTimeMean, targets = getDataInformation(torch_dataset_lazy)
 
 
-# In[14]:
+# In[60]:
 
 
-targets.shape
+targets_ = np.unique(targets)
 
 
 # In[15]:
@@ -427,45 +427,87 @@ def getStats(arrays, targets):
 statsMeans, statsStd = getStats([samplesByFilter, timeLength, errorMeanByFilter, fluxMeanByFilter, fluxStdByFilter, deltaTimeMean], targets)
 
 
-# In[17]:
+# In[84]:
 
 
-print(statsMeans[0, 0,:])
-
-print(statsStd[0, 0, :])
-
-
-# In[18]:
-
-
-def getErrorComplicated(err, flux):
+def getErrorComplicated(err, flux, targets):
     
 #     print(np.median(err, 0))
-#     print(np.std(flux, 0))
+# #     print(np.std(flux, 0))
     
-    stats = np.zeros(shape = (2, 6))
+#     stats = np.zeros(shape = (2, 6))
     
-    stats[0, :] = np.median(err, 0)/np.std(flux, 0)
+#     stats[0, :] = np.median(err, 0)/np.std(flux, 0)
+# #     
+# #     print("error normalizado promedio")
+# #     print(np.median(err, 0)/np.std(flux, 0))
+# #     print("\n")
     
-#     print("error normalizado promedio")
-#     print(np.median(err, 0)/np.std(flux, 0))
-#     print("\n")
+#     stats[1, :] = np.std(err,0)/np.std(flux,0)
     
-    stats[1, :] = np.std(err,0)/np.std(flux,0)
+# #     print("errores fotométricos normalizados")
+# #     print(np.std(err,0)/np.std(flux,0))
     
-#     print("errores fotométricos normalizados")
-#     print(np.std(err,0)/np.std(flux,0))
+#     return stats
+
+
+
+    targets_ = np.unique(targets)
+    
+#     statsMeans = np.zeros(shape = (len(arrayNames), targets_.shape[0], 6) )
+    stats = np.zeros(shape = (2, 6, 6))
+    
+    
+    for idxClass, class_ in enumerate(targets_):
+
+        print(class_)
+
+#         print(targets.shape)
+        maskClass = (targets[:, 0] == class_)
+
+#             print(array[maskClass,:].shape[0])
+#         print(arrayNames[idx])
+#         print(np.mean(array[maskClass,:], 0))
+#         print(np.std(array[maskClass,:], 0))
+#         print("\n\n")
+
+    
+#         print("error normalizado promedio")
+#         print(np.median(err, 0)/np.std(flux, 0))
+#         print("\n")
+
+        stats[0, idxClass, :] = np.median(err[maskClass, :], 0)/np.std(flux[maskClass, :], 0)
+        
+        
+#         print("errores fotométricos normalizados")
+#         print(np.std(err,0)/np.std(flux,0))
+
+        stats[1, idxClass, :] = np.std(err[maskClass, :],0)/np.std(flux[maskClass, :],0)
+    
+
+#             dict_[arrayNames[idx]][targets[0, 0]]["mean"] =  np.mean(array[maskClass,:], 0)
+#             tmpDict[targets_] = np.mean(array[maskClass,:], 0)
+#             print(np.mean(array[maskClass,:], 0))
+#             dict_[arrayNames[idx]][targets_]=  np.mean(array[maskClass,:], 0)
+
+#         print(tmpDict)
     
     return stats
 
 
-# In[21]:
+# In[86]:
 
 
-errorStats = getErrorComplicated(errorMeanByFilter, fluxMeanByFilter)
+errorStats = getErrorComplicated(errorMeanByFilter, fluxMeanByFilter, targets)
 
 
-# In[22]:
+# In[92]:
+
+
+# errorStats[0, :, :]
+
+
+# In[94]:
 
 
 results = {"stats": {"means": statsMeans, "std": statsStd}, "errorStats": errorStats}
@@ -476,16 +518,60 @@ pickle.dump(results, a_file)
 a_file.close()
 
 
-# In[ ]:
+# In[95]:
 
 
-# # load ids dictionary
+import sys
+
+
+sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
+
+
+# In[75]:
+
+
+# # # load ids dictionary
 # a_file = open("./datasetStats.pkl", "rb")
 # output = pickle.load(a_file)
-# print(output)
+# print(output["stats"]["means"].shape)
 
 
-# In[ ]:
+# In[63]:
+
+
+# plot
+
+# fig, ax = plt.subplots()
+
+arrayNames = ["samples", "time length", "error mean by filter", "flux mean by filter", "flux Std By Filter", "delta Time Mean"]
+
+fig, ax = plt.subplots(len(arrayNames), 6, tight_layout = True, figsize = (15,10))
+
+for i in np.arange(len(arrayNames)):
+    
+    for c in np.arange(6):
+        
+        ax[i, c].errorbar(np.arange(0, 6), output["stats"]["means"][i, c, :], yerr=output["stats"]["std"][i, c, :], fmt='o')
+        ax[i, c].set_title(arrayNames[i] + " class " + str(targets_[c]))
+
+
+# In[64]:
+
+
+arrayNames = ["error normalizado promedio", "errores fotométricos normalizados"]
+
+fig, ax = plt.subplots(len(arrayNames), 6, tight_layout = True, figsize = (15,10))
+
+for i in np.arange(len(arrayNames)):
+    
+    for c in np.arange(6):
+        
+        ax[i, c].scatter(np.arange(0, 6), output["errorStats"]["means"][i, c], yerr=output["errorStats"]["std"][i, c, :], fmt='o')
+#         ax[i, c].errorbar(np.arange(0, 6), output["errorStats"]["means"][i, c], yerr=output["errorStats"]["std"][i, c, :], fmt='o')
+        ax[i, c].set_title(arrayNames[i] + " class " + str(targets_[c]))
+
+
+# In[21]:
 
 
 # splitting the data
@@ -526,15 +612,6 @@ a_file.close()
 # trainIdx = trainIdx.astype(int)
 # valIdx = valIdx.astype(int)
 # testIdx = testIdx.astype(int)
-
-
-# In[23]:
-
-
-import sys
-
-
-sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
 
 
 # In[ ]:
