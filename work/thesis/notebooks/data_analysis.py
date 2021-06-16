@@ -17,7 +17,7 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+trainingOnGuanaco = False
 
 # train without notebook
 trainWithJustPython = False
@@ -159,7 +159,7 @@ from sklearn.model_selection import train_test_split
 
 # ## Load the path to save model while training
 
-# In[41]:
+# In[6]:
 
 
 import os
@@ -195,7 +195,7 @@ folder_path = (tmpGuanaco + expPath) if trainingOnGuanaco else (tmpLocal + expPa
 
 # # Load data
 
-# In[42]:
+# In[7]:
 
 
 # define path to dataset
@@ -204,7 +204,7 @@ pathToFile = "/home/shared/astro/PLAsTiCC/" if trainingOnGuanaco else "/home/leo
 
 # ## Loading dataset with pytorch tool
 
-# In[43]:
+# In[8]:
 
 
 # torch_dataset_lazy = get_plasticc_datasets(pathToFile)
@@ -376,7 +376,7 @@ samplesByFilter, timeLength, errorMeanByFilter, fluxMeanByFilter, fluxStdByFilte
 targets.shape
 
 
-# In[34]:
+# In[15]:
 
 
 def getStats(arrays, targets):
@@ -385,15 +385,16 @@ def getStats(arrays, targets):
     
     targets_ = np.unique(targets)
     
-    dict_ = {}
+    statsMeans = np.zeros(shape = (len(arrayNames), targets_.shape[0], 6) )
+    
+    statsStd = np.zeros(shape = (len(arrayNames), targets_.shape[0], 6) )
+    
     
     for idx, array in enumerate(arrays):
             
         print(arrayNames[idx] + "\n")
         
-        tmpDict = {}
-        
-        for class_ in targets_:
+        for idxClass, class_ in enumerate(targets_):
 
             print(class_)
             
@@ -401,11 +402,15 @@ def getStats(arrays, targets):
             maskClass = (targets[:, 0] == class_)
             
 #             print(array[maskClass,:].shape[0])
-#             print(arrayNames[idx])
+            print(arrayNames[idx])
             print(np.mean(array[maskClass,:], 0))
             print(np.std(array[maskClass,:], 0))
             print("\n\n")
-        
+            
+            
+            statsMeans[idx, idxClass, :] = np.mean(array[maskClass,:], 0)
+            statsStd[idx, idxClass, :] = np.std(array[maskClass,:], 0)
+            
 #             dict_[arrayNames[idx]][targets[0, 0]]["mean"] =  np.mean(array[maskClass,:], 0)
 #             tmpDict[targets_] = np.mean(array[maskClass,:], 0)
 #             print(np.mean(array[maskClass,:], 0))
@@ -413,16 +418,24 @@ def getStats(arrays, targets):
 
 #         print(tmpDict)
     
-#     return dict_
+    return statsMeans, statsStd
 
 
-# In[35]:
+# In[16]:
 
 
-stats = getStats([samplesByFilter, timeLength, errorMeanByFilter, fluxMeanByFilter, fluxStdByFilter, deltaTimeMean], targets)
+statsMeans, statsStd = getStats([samplesByFilter, timeLength, errorMeanByFilter, fluxMeanByFilter, fluxStdByFilter, deltaTimeMean], targets)
 
 
-# In[37]:
+# In[17]:
+
+
+print(statsMeans[0, 0,:])
+
+print(statsStd[0, 0, :])
+
+
+# In[18]:
 
 
 def getErrorComplicated(err, flux):
@@ -430,22 +443,49 @@ def getErrorComplicated(err, flux):
 #     print(np.median(err, 0))
 #     print(np.std(flux, 0))
     
-    print("error normalizado promedio")
-    print(np.median(err, 0)/np.std(flux, 0))
-    print("\n")
+    stats = np.zeros(shape = (2, 6))
     
-    print("errores fotométricos normalizados")
-    print(np.std(err,0)/np.std(flux,0))
+    stats[0, :] = np.median(err, 0)/np.std(flux, 0)
     
+#     print("error normalizado promedio")
+#     print(np.median(err, 0)/np.std(flux, 0))
+#     print("\n")
+    
+    stats[1, :] = np.std(err,0)/np.std(flux,0)
+    
+#     print("errores fotométricos normalizados")
+#     print(np.std(err,0)/np.std(flux,0))
+    
+    return stats
 
 
-# In[38]:
+# In[21]:
 
 
-getErrorComplicated(errorMeanByFilter, fluxMeanByFilter)
+errorStats = getErrorComplicated(errorMeanByFilter, fluxMeanByFilter)
 
 
-# In[39]:
+# In[22]:
+
+
+results = {"stats": {"means": statsMeans, "std": statsStd}, "errorStats": errorStats}
+
+# # save stats
+a_file = open("./datasetStats.pkl", "wb")
+pickle.dump(results, a_file)
+a_file.close()
+
+
+# In[ ]:
+
+
+# # load ids dictionary
+# a_file = open("./datasetStats.pkl", "rb")
+# output = pickle.load(a_file)
+# print(output)
+
+
+# In[ ]:
 
 
 # splitting the data
@@ -488,7 +528,7 @@ getErrorComplicated(errorMeanByFilter, fluxMeanByFilter)
 # testIdx = testIdx.astype(int)
 
 
-# In[40]:
+# In[23]:
 
 
 import sys
