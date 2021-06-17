@@ -17,8 +17,8 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-#trainingOnGuanaco = False
 trainingOnGuanaco = False
+# trainingOnGuanaco = True
 
 # train without notebook
 trainWithJustPython = False
@@ -294,6 +294,7 @@ def getDataInformation(dataset):
         for i in range(6):
             
 #             data = data_[0]
+                
             
             # taking last valid index
             # mask= [1,1,1,1,1, 0,0,0,0]
@@ -303,32 +304,42 @@ def getDataInformation(dataset):
             # test
 #             assert data[0][i, 3, lastIndex] == 1 and data[0][i, 3, lastIndex+1] == 1
             
-            # diff between last and first time
-            timeLength[idx, i] = data[i, 0, lastIndex]  - data[i, 0, 0]
-            
-            # mean error
-#             print(torch.mean(data[0][i, 2, 0:lastIndex], dim = 0).shape)
-#             errorMeanByFilter[idx, i] = torch.mean(data[i, 2, 0:lastIndex], dim = 0)
-            errorMeanByFilter[idx, i] = torch.median(data[i, 2, 0:lastIndex])
-            
-            # flux mean
-#             fluxMeanByFilter[idx, i] = torch.mean(data[i, 1, 0:lastIndex], dim = 0)
-            fluxMeanByFilter[idx, i] = torch.median(data[i, 1, 0:lastIndex])
-#             unbiased = True give nan for channle 0
-#             fluxStdByFilter[idx, i] = torch.std(data[i, 1, 0:lastIndex], dim = 0)
-            fluxStdByFilter[idx, i] = torch.quantile(data[i, 1, 0:lastIndex], 0.75, dim = 0) - torch.quantile(data[i, 1, 0:lastIndex], 0.25, dim = 0)
-            
-            # delta time
-            originalTime = data[i, 0, 0:lastIndex]
-#             print(originalTime.shape)
-            if originalTime.shape[0] <= 1 :
-#                 print("shape short")
+            if data[i, 0, 0:lastIndex].shape[0] <= 1:
+                
+                timeLength[idx, i] = float("NaN")
+                errorMeanByFilter[idx, i]= float("NaN")
+                fluxMeanByFilter[idx, i]= float("NaN")
+                fluxStdByFilter[idx, i]= float("NaN")
                 deltaTimeMean[idx, i] = float("NaN")
-#                 print(deltaTimeMean[idx, i])
-#                 print(np.isnan(deltaTimeMean[idx, i]))
+                
             else:
                 
-    #             deltaTimeMean[idx, i] = torch.mean(originalTime[1:] - originalTime[:-1], dim = 0)
+                # diff between last and first time
+                timeLength[idx, i] = data[i, 0, lastIndex]  - data[i, 0, 0]
+
+                # mean error
+    #             print(torch.mean(data[0][i, 2, 0:lastIndex], dim = 0).shape)
+    #             errorMeanByFilter[idx, i] = torch.mean(data[i, 2, 0:lastIndex], dim = 0)
+                errorMeanByFilter[idx, i] = torch.median(data[i, 2, 0:lastIndex])
+
+                # flux mean
+    #             fluxMeanByFilter[idx, i] = torch.mean(data[i, 1, 0:lastIndex], dim = 0)
+                fluxMeanByFilter[idx, i] = torch.median(data[i, 1, 0:lastIndex])
+    #             unbiased = True give nan for channle 0
+    #             fluxStdByFilter[idx, i] = torch.std(data[i, 1, 0:lastIndex], dim = 0)
+                fluxStdByFilter[idx, i] = torch.quantile(data[i, 1, 0:lastIndex], 0.75, dim = 0) - torch.quantile(data[i, 1, 0:lastIndex], 0.25, dim = 0)
+
+                # delta time
+                originalTime = data[i, 0, 0:lastIndex]
+    #             print(originalTime.shape)
+#                 if originalTime.shape[0] <= 1 :
+#     #                 print("shape short")
+#                     deltaTimeMean[idx, i] = float("NaN")
+    #                 print(deltaTimeMean[idx, i])
+    #                 print(np.isnan(deltaTimeMean[idx, i]))
+#                 else:
+
+        #             deltaTimeMean[idx, i] = torch.mean(originalTime[1:] - originalTime[:-1], dim = 0)
                 deltaTimeMean[idx, i] = torch.median(originalTime[1:] - originalTime[:-1])
 #             print(torch.median(originalTime[1:] - originalTime[:-1]))
 #             print(torch.mean(originalTime[1:] - originalTime[:-1], dim = 0))
@@ -508,7 +519,7 @@ import sys
 sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
 
 
-# In[22]:
+# In[ ]:
 
 
 # # load ids dictionary
@@ -517,7 +528,7 @@ output = pickle.load(a_file)
 print(output["errorStats"].shape)
 
 
-# In[23]:
+# In[ ]:
 
 
 # plot
