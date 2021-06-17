@@ -17,7 +17,8 @@
 # 4) add comment to experiemnts
 # 5) Add this file as python file 
 # 6) Change launchJobOnGuanaco file to run this file but with python format
-trainingOnGuanaco = True
+#trainingOnGuanaco = False
+trainingOnGuanaco = False
 
 # train without notebook
 trainWithJustPython = False
@@ -29,7 +30,7 @@ number_experiment = 27
 number_experiment = str(number_experiment)
 
 # seed to generate same datasets
-seed = 1
+seed = 0
 
 # training
 epochs = 100000
@@ -156,6 +157,8 @@ from auxFunctions import *
 
 from sklearn.model_selection import train_test_split
 
+import pickle
+
 
 # ## Load the path to save model while training
 
@@ -247,8 +250,6 @@ print("dataset test ok")
 # fig.savefig("lightCurve.pdf", bbox_inches='tight')
 
 
-# # Spliting data (train/test)
-
 # In[12]:
 
 
@@ -257,8 +258,6 @@ def getDataInformation(dataset):
     totalSize = dataset.__len__()
     
     print("total light curves: ", totalSize)
-#     ids = np.zeros(shape = (totalSize,))
-#     targets = np.zeros(shape = (totalSize,))
     
     # samples by filter
     samplesByFilter = np.zeros(shape = (totalSize, 6))
@@ -282,8 +281,6 @@ def getDataInformation(dataset):
     arrays = [samplesByFilter, timeLength, errorMeanByFilter, fluxMeanByFilter, fluxStdByFilter, deltaTimeMean, targets]
     
     for idx, data_ in enumerate(dataset):
-        
-#         print(data[0][0, 2, :])
         
         data = data_[0]
         
@@ -311,56 +308,40 @@ def getDataInformation(dataset):
             
             # mean error
 #             print(torch.mean(data[0][i, 2, 0:lastIndex], dim = 0).shape)
-            errorMeanByFilter[idx, i] = torch.mean(data[i, 2, 0:lastIndex], dim = 0)
+#             errorMeanByFilter[idx, i] = torch.mean(data[i, 2, 0:lastIndex], dim = 0)
+            errorMeanByFilter[idx, i] = torch.median(data[i, 2, 0:lastIndex])
             
             # flux mean
-            fluxMeanByFilter[idx, i] = torch.mean(data[i, 1, 0:lastIndex], dim = 0)
+#             fluxMeanByFilter[idx, i] = torch.mean(data[i, 1, 0:lastIndex], dim = 0)
+            fluxMeanByFilter[idx, i] = torch.median(data[i, 1, 0:lastIndex])
 #             unbiased = True give nan for channle 0
-            fluxStdByFilter[idx, i] = torch.std(data[i, 1, 0:lastIndex], dim = 0)
+#             fluxStdByFilter[idx, i] = torch.std(data[i, 1, 0:lastIndex], dim = 0)
+            fluxStdByFilter[idx, i] = torch.quantile(data[i, 1, 0:lastIndex], 0.75, dim = 0) - torch.quantile(data[i, 1, 0:lastIndex], 0.25, dim = 0)
             
-        
             # delta time
             originalTime = data[i, 0, 0:lastIndex]
 #             print(originalTime.shape)
-#             if originalTime.shape > :
-        
-            deltaTimeMean[idx, i] = torch.mean(originalTime[1:] - originalTime[:-1], dim = 0)
-    
-# #             if np.isnan(deltaTimeMean[idx, i]):
-#             if np.isnan(fluxStdByFilter[idx, i]):
-#                 print("nan value")
-#                 print(lastIndex)
-#                 print(originalTime)
-#                 print(torch.mean(originalTime[1:] - originalTime[:-1], dim = 0))
-#                 print(fluxMeanByFilter[idx, i])
-#                 print(data[i, 1, 0:lastIndex])
-#             print(deltaTimeMean[idx, i])
-        
-#     applyMask = False
-    
-    # remove nan values
-#     for idx, array in enumerate(arrays):
-            
-#         if np.any(np.isnan(array)):
-            
-            
-    mask = ~np.isnan(fluxStdByFilter).any(axis = 1)
+            if originalTime.shape[0] <= 1 :
+#                 print("shape short")
+                deltaTimeMean[idx, i] = float("NaN")
+#                 print(deltaTimeMean[idx, i])
+#                 print(np.isnan(deltaTimeMean[idx, i]))
+            else:
+                
+    #             deltaTimeMean[idx, i] = torch.mean(originalTime[1:] - originalTime[:-1], dim = 0)
+                deltaTimeMean[idx, i] = torch.median(originalTime[1:] - originalTime[:-1])
+#             print(torch.median(originalTime[1:] - originalTime[:-1]))
+#             print(torch.mean(originalTime[1:] - originalTime[:-1], dim = 0))
+
+    # remove nanas
+    mask = ~np.isnan(deltaTimeMean).any(axis = 1)
+#     print(np.any(mask))
     for idx, array in enumerate(arrays):
             
         arrays[idx] = array[mask, :]
-            
-#         if np.any(np.isnan(array)):
-            
-#         array = array[mask, :]
-#         arrays[idx] = array
+        
+    print(arrays[idx].shape)
     
-    
-#             print(tmpDeltaTime)
-# #     print(samplesByFilter.mean(dim = 0))
-#     print(timeLength.shape)
-#     print(errorByFilter)
-    
-#     return samplesByFilter, timeLength, errorMeanByFilter, fluxMeanByFilter, fluxStdByFilter,deltaTimeMean
     return arrays
 
 
@@ -370,7 +351,7 @@ def getDataInformation(dataset):
 samplesByFilter, timeLength, errorMeanByFilter, fluxMeanByFilter, fluxStdByFilter, deltaTimeMean, targets = getDataInformation(torch_dataset_lazy)
 
 
-# In[60]:
+# In[14]:
 
 
 targets_ = np.unique(targets)
@@ -408,8 +389,8 @@ def getStats(arrays, targets):
             print("\n\n")
             
             
-            statsMeans[idx, idxClass, :] = np.mean(array[maskClass,:], 0)
-            statsStd[idx, idxClass, :] = np.std(array[maskClass,:], 0)
+            statsMeans[idx, idxClass, :] = np.median(array[maskClass,:], 0)
+            statsStd[idx, idxClass, :] = np.percentile(array[maskClass,:], 0.75) - np.percentile(array[maskClass,:], 0.25)
             
 #             dict_[arrayNames[idx]][targets[0, 0]]["mean"] =  np.mean(array[maskClass,:], 0)
 #             tmpDict[targets_] = np.mean(array[maskClass,:], 0)
@@ -427,7 +408,7 @@ def getStats(arrays, targets):
 statsMeans, statsStd = getStats([samplesByFilter, timeLength, errorMeanByFilter, fluxMeanByFilter, fluxStdByFilter, deltaTimeMean], targets)
 
 
-# In[84]:
+# In[17]:
 
 
 def getErrorComplicated(err, flux, targets):
@@ -495,19 +476,19 @@ def getErrorComplicated(err, flux, targets):
     return stats
 
 
-# In[86]:
+# In[18]:
 
 
 errorStats = getErrorComplicated(errorMeanByFilter, fluxMeanByFilter, targets)
 
 
-# In[92]:
+# In[19]:
 
 
 # errorStats[0, :, :]
 
 
-# In[94]:
+# In[20]:
 
 
 results = {"stats": {"means": statsMeans, "std": statsStd}, "errorStats": errorStats}
@@ -518,7 +499,7 @@ pickle.dump(results, a_file)
 a_file.close()
 
 
-# In[95]:
+# In[21]:
 
 
 import sys
@@ -527,21 +508,23 @@ import sys
 sys.exit("Exit from code, because we are in cluster or running locally. Training has finished.")
 
 
-# In[75]:
+# In[22]:
 
 
-# # # load ids dictionary
-# a_file = open("./datasetStats.pkl", "rb")
-# output = pickle.load(a_file)
-# print(output["stats"]["means"].shape)
+# # load ids dictionary
+a_file = open("./datasetStats.pkl", "rb")
+output = pickle.load(a_file)
+print(output["errorStats"].shape)
 
 
-# In[63]:
+# In[23]:
 
 
 # plot
 
 # fig, ax = plt.subplots()
+
+targets_ = [6, 16, 53, 65, 88, 92]
 
 arrayNames = ["samples", "time length", "error mean by filter", "flux mean by filter", "flux Std By Filter", "delta Time Mean"]
 
@@ -551,27 +534,42 @@ for i in np.arange(len(arrayNames)):
     
     for c in np.arange(6):
         
+        ax[i, c].scatter(np.arange(0, 6), output["stats"]["means"][i, c, :])
         ax[i, c].errorbar(np.arange(0, 6), output["stats"]["means"][i, c, :], yerr=output["stats"]["std"][i, c, :], fmt='o')
         ax[i, c].set_title(arrayNames[i] + " class " + str(targets_[c]))
 
 
-# In[64]:
+# In[ ]:
 
 
-arrayNames = ["error normalizado promedio", "errores fotométricos normalizados"]
+# save file as pdf
+fig.savefig("./dataSetAnalysis/statsByClassAndFilterWithErrorBar.pdf")
 
-fig, ax = plt.subplots(len(arrayNames), 6, tight_layout = True, figsize = (15,10))
+
+# In[ ]:
+
+
+arrayNames = ["er norm", "er fot norm"]
+
+fig, ax = plt.subplots(len(arrayNames), 6, tight_layout = True, figsize = (15,4))
 
 for i in np.arange(len(arrayNames)):
     
     for c in np.arange(6):
         
-        ax[i, c].scatter(np.arange(0, 6), output["errorStats"]["means"][i, c], yerr=output["errorStats"]["std"][i, c, :], fmt='o')
+        ax[i, c].scatter(np.arange(0, 6), output["errorStats"][i, c, :])
 #         ax[i, c].errorbar(np.arange(0, 6), output["errorStats"]["means"][i, c], yerr=output["errorStats"]["std"][i, c, :], fmt='o')
         ax[i, c].set_title(arrayNames[i] + " class " + str(targets_[c]))
 
 
-# In[21]:
+# In[ ]:
+
+
+# save as figure
+fig.savefig("./dataSetAnalysis/errorStatsByClassAndFilterWithErrorBar.pdf")
+
+
+# In[ ]:
 
 
 # splitting the data
