@@ -145,6 +145,29 @@ def saveLightCurvesIdsBeforeBalancing(trainIdx, valIdx, testIdx, path, lightCurv
 
     print("light curves ids saved on a file")
     
+    
+# save ids before balancing
+# tnis is exclusive for analysis of execution times
+def saveLightCurvesIdsBeforeBalancingForExecutionTimeAnalysis(trainIdx, valIdx, testIdx, path, lightCurvesIds, labels, sizePercent):
+    
+    # get ids of light cur, ves
+    ids = {
+        "train": lightCurvesIds[trainIdx],
+        "validation": lightCurvesIds[valIdx],
+        "test": lightCurvesIds[testIdx],
+        "message": "These are ids of light curves",
+        "labels_train": labels[trainIdx],
+        "labels_validation": labels[valIdx],
+        "labels_test": labels[testIdx],
+    }
+    
+    # save object
+    a_file = open(path + "/dataset_ids_before_balancing_" + str(sizePercent) + ".pkl", "wb")
+    pickle.dump(ids, a_file)
+    a_file.close()
+
+    print("light curves ids saved on a file")
+    
 # save ids of dataset
 def getIds(dataLoader, dataLoaderSize):
 
