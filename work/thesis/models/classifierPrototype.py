@@ -18,7 +18,9 @@ class EncoderClassifier(torch.nn.Module):
         super(type(self), self).__init__()
         
         # partial convolution
+#         self.pconv1 = PartialConv(in_channels_C = len(passband),in_channels_M = len(passband), out_channels = 64, kernel_size = 3, stride=2, padding=0, dilation=1, bias=True)
         self.pconv1 = PartialConv(in_channels_C = len(passband),in_channels_M = len(passband), out_channels = 64, kernel_size = 3, stride=2, padding=0, dilation=1, bias=True)
+    
         
         # partial convolution
         self.pconv2 = PartialConv(in_channels_C = 64,in_channels_M = 64, out_channels = 32, kernel_size = 3, stride=2, padding=0, dilation=1, bias=True)
