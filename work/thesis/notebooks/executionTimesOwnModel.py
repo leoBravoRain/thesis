@@ -448,9 +448,9 @@ for sizePercent in sizePercents:
 
     if useGpu: 
         
-        get_ipython().run_line_magic('timeit', 'trainModelGPU(trainIdx)')
+        get_ipython().run_line_magic('timeit', '-n 10 -r 10 trainModelGPU(trainIdx)')
         
     else:
         
-        get_ipython().run_line_magic('timeit', 'trainModelCPU(trainIdx)')
+        get_ipython().run_line_magic('timeit', '-n 10 -r 10 trainModelCPU(trainIdx)')
 

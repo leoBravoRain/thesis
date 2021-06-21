@@ -215,5 +215,5 @@ for sizePercent in sizePercents:
         ids = pickle.load(f)
         print(ids["train"].shape[0])
         
-        get_ipython().run_line_magic('timeit', '-n 1 -r 1 Parallel(n_jobs=1)(delayed(compute_fats_features)(batch_names) for batch_names in split_list_in_chunks(ids["train"], 100))')
+        get_ipython().run_line_magic('timeit', '-n 10 -r 10 Parallel(n_jobs=1)(delayed(compute_fats_features)(batch_names) for batch_names in split_list_in_chunks(ids["train"], 100))')
 
